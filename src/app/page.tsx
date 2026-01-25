@@ -364,16 +364,51 @@ export default function Home() {
               </div>
               
               {/* Table Rows */}
-              {[
-                { feature: "Free Tier", cf: true, r: "partial", cp: false, jd: true },
-                { feature: "No Account Required", cf: true, r: false, cp: false, jd: false },
-                { feature: "C/C++ Support", cf: true, r: true, cp: false, jd: true },
-                { feature: "Real-time Collaboration", cf: true, r: false, cp: true, jd: false },
-                { feature: "Instant Execution", cf: true, r: "partial", cp: true, jd: "partial" },
-                { feature: "Syntax Highlighting", cf: true, r: true, cp: true, jd: true },
-                { feature: "Custom Themes", cf: true, r: false, cp: true, jd: false },
-                { feature: "Version History", cf: true, r: false, cp: false, jd: false },
-              ].map((row, index) => (
+              {(() => {
+                type StatusType = boolean | "partial";
+                type ComparisonRow = {
+                  feature: string;
+                  cf: StatusType;
+                  r: StatusType;
+                  cp: StatusType;
+                  jd: StatusType;
+                };
+                
+                const data: ComparisonRow[] = [
+                  { feature: "Free Tier", cf: true, r: "partial", cp: false, jd: true },
+                  { feature: "No Account Required", cf: true, r: false, cp: false, jd: false },
+                  { feature: "C/C++ Support", cf: true, r: true, cp: false, jd: true },
+                  { feature: "Real-time Collaboration", cf: true, r: false, cp: true, jd: false },
+                  { feature: "Instant Execution", cf: true, r: "partial", cp: true, jd: "partial" },
+                  { feature: "Syntax Highlighting", cf: true, r: true, cp: true, jd: true },
+                  { feature: "Custom Themes", cf: true, r: false, cp: true, jd: false },
+                  { feature: "Version History", cf: true, r: false, cp: false, jd: false },
+                ];
+                
+                return data.map((row, index) => {
+                const renderStatus = (status: StatusType) => {
+                  if (status === true) {
+                    return (
+                      <div className="w-6 h-6 bg-cyan-500 rounded flex items-center justify-center">
+                        <span className="text-xs text-black font-bold">✓</span>
+                      </div>
+                    );
+                  }
+                  if (status === "partial") {
+                    return (
+                      <div className="w-6 h-6 bg-yellow-500 rounded flex items-center justify-center">
+                        <span className="text-xs text-black font-bold">−</span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="w-6 h-6 bg-red-500 rounded flex items-center justify-center">
+                      <span className="text-xs text-white font-bold">✕</span>
+                    </div>
+                  );
+                };
+                
+                return (
                 <div 
                   key={row.feature}
                   className={`grid grid-cols-5 border-b border-gray-800 ${
@@ -385,74 +420,28 @@ export default function Home() {
                   </div>
                   <div className="p-4 border-r border-gray-800 bg-purple-950/30">
                     <div className="flex justify-center">
-                      {row.cf === true ? (
-                        <div className="w-6 h-6 bg-cyan-500 rounded flex items-center justify-center">
-                          <span className="text-xs text-black font-bold">✓</span>
-                        </div>
-                      ) : row.cf === "partial" ? (
-                        <div className="w-6 h-6 bg-yellow-500 rounded flex items-center justify-center">
-                          <span className="text-xs text-black font-bold">−</span>
-                        </div>
-                      ) : (
-                        <div className="w-6 h-6 bg-red-500 rounded flex items-center justify-center">
-                          <span className="text-xs text-white font-bold">✕</span>
-                        </div>
-                      )}
+                      {renderStatus(row.cf)}
                     </div>
                   </div>
                   <div className="p-4 border-r border-gray-800">
                     <div className="flex justify-center">
-                      {row.r === true ? (
-                        <div className="w-6 h-6 bg-cyan-500 rounded flex items-center justify-center">
-                          <span className="text-xs text-black font-bold">✓</span>
-                        </div>
-                      ) : row.r === "partial" ? (
-                        <div className="w-6 h-6 bg-yellow-500 rounded flex items-center justify-center">
-                          <span className="text-xs text-black font-bold">−</span>
-                        </div>
-                      ) : (
-                        <div className="w-6 h-6 bg-red-500 rounded flex items-center justify-center">
-                          <span className="text-xs text-white font-bold">✕</span>
-                        </div>
-                      )}
+                      {renderStatus(row.r)}
                     </div>
                   </div>
                   <div className="p-4 border-r border-gray-800">
                     <div className="flex justify-center">
-                      {row.cp === true ? (
-                        <div className="w-6 h-6 bg-cyan-500 rounded flex items-center justify-center">
-                          <span className="text-xs text-black font-bold">✓</span>
-                        </div>
-                      ) : row.cp === "partial" ? (
-                        <div className="w-6 h-6 bg-yellow-500 rounded flex items-center justify-center">
-                          <span className="text-xs text-black font-bold">−</span>
-                        </div>
-                      ) : (
-                        <div className="w-6 h-6 bg-red-500 rounded flex items-center justify-center">
-                          <span className="text-xs text-white font-bold">✕</span>
-                        </div>
-                      )}
+                      {renderStatus(row.cp)}
                     </div>
                   </div>
                   <div className="p-4">
                     <div className="flex justify-center">
-                      {row.jd === true ? (
-                        <div className="w-6 h-6 bg-cyan-500 rounded flex items-center justify-center">
-                          <span className="text-xs text-black font-bold">✓</span>
-                        </div>
-                      ) : row.jd === "partial" ? (
-                        <div className="w-6 h-6 bg-yellow-500 rounded flex items-center justify-center">
-                          <span className="text-xs text-black font-bold">−</span>
-                        </div>
-                      ) : (
-                        <div className="w-6 h-6 bg-red-500 rounded flex items-center justify-center">
-                          <span className="text-xs text-white font-bold">✕</span>
-                        </div>
-                      )}
+                      {renderStatus(row.jd)}
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+              });
+              })()}
             </div>
           </div>
         </div>
