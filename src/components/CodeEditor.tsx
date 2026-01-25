@@ -1,7 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import Editor from '@monaco-editor/react';
+import dynamic from 'next/dynamic';
+
+const Editor = dynamic(() => import('@monaco-editor/react'), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center h-full text-gray-400">Loading Editor...</div>
+});
+
+declare const monaco: any;
 
 type Language = 'c' | 'cpp' | 'python' | 'java' | 'javascript';
 
@@ -125,11 +132,50 @@ export default function CodeEditor() {
               value={code}
               onChange={(value) => setCode(value || '')}
               theme="vs-dark"
+              beforeMount={(monaco) => {
+                // Store monaco instance globally for use in onMount
+                (window as any).monacoInstance = monaco;
+              }}
+              onMount={(editor, monaco) => {
+                // Disable copy-paste keyboard shortcuts
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {});
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {});
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {});
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => {});
+                
+                // Prevent context menu
+                editor.onContextMenu((e) => {
+                  e.event.preventDefault();
+                  e.event.stopPropagation();
+                });
+                
+                // Prevent selection with mouse
+                editor.onMouseDown((e) => {
+                  if (e.event.leftButton && e.event.shiftKey) {
+                    e.event.preventDefault();
+                  }
+                });
+              }}
               options={{
                 fontSize: 14,
                 minimap: { enabled: false },
                 scrollBeyondLastLine: false,
                 automaticLayout: true,
+                wordWrap: 'on',
+                selectOnLineNumbers: false,
+                selectionHighlight: false,
+                occurrencesHighlight: 'off',
+                renderLineHighlight: 'none',
+                contextmenu: false,
+                quickSuggestions: false,
+                parameterHints: { enabled: false },
+                suggest: { showWords: false },
+                acceptSuggestionOnCommitCharacter: false,
+                tabCompletion: 'off',
+                wordBasedSuggestions: 'off',
+                selectionClipboard: false,
+                links: false,
+                dragAndDrop: false,
               }}
             />
           </div>
