@@ -15,8 +15,9 @@ interface ExecuteRequest {
   input?: string;
 }
 
-// Create temp directory if it doesn't exist
-const tempDir = path.join(process.cwd(), 'temp');
+// Use /tmp directory for serverless environments (Vercel, AWS Lambda, etc.)
+// /tmp is the only writable directory in serverless environments
+const tempDir = '/tmp';
 
 async function ensureTempDir() {
   if (!existsSync(tempDir)) {
