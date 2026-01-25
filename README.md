@@ -20,31 +20,10 @@ A CodeChef-style online code compiler built with Next.js and TypeScript that sup
 
 ## Prerequisites
 
-Before running this project, ensure you have the following installed on your system:
-
 - **Node.js** (v18 or higher)
 - **npm** (comes with Node.js)
-- **GCC/G++** compiler for C/C++ support
-- **Python** (v3.x) for Python support
-- **Java JDK** for Java support
 
-### Installing Compilers/Interpreters
-
-#### Windows:
-- **GCC/G++**: Install [MinGW](https://sourceforge.net/projects/mingw/) or [TDM-GCC](https://jmeubank.github.io/tdm-gcc/)
-- **Python**: Download from [python.org](https://www.python.org/downloads/)
-- **Java**: Download from [Oracle](https://www.oracle.com/java/technologies/downloads/) or [OpenJDK](https://adoptium.net/)
-
-#### Linux:
-```bash
-sudo apt-get update
-sudo apt-get install build-essential python3 default-jdk
-```
-
-#### macOS:
-```bash
-brew install gcc python java
-```
+**No API key required!** This project uses the free **Piston API** for code execution, which works on any platform including Vercel, Netlify, etc.
 
 ## Getting Started
 
@@ -58,8 +37,14 @@ npm install
 npm run dev
 ```
 
-3. **Open your browser:**
+5. **Open your browser:**
 Navigate to [http://localhost:3000](http://localhost:3000)
+
+## Deploy to Vercel
+
+1. Push your code to GitHub
+2. Import your repository in Vercel
+3. Deploy! 🚀 (No environment variables needed)
 
 ## Usage
 
@@ -94,19 +79,24 @@ complier/
 ## How It Works
 
 1. **Frontend**: Monaco Editor provides the code editing interface
-2. **API Route**: `/api/execute` handles code compilation and execution
-3. **Execution**: Code is written to temporary files, compiled (if needed), executed, and cleaned up
-4. **Security**: 5-second timeout on all executions to prevent infinite loops
+2. **API Route**: `/api/execute` sends code to Piston API
+3. **Piston**: Free, open-source code execution engine that compiles and runs code in isolated containers
+4. **Response**: Output is returned and displayed to the user
+
+**Benefits of Piston:**
+- ✅ Completely free and open-source
+- ✅ No API key required
+- ✅ Works on serverless platforms (Vercel, Netlify, etc.)
+- ✅ Secure containerized execution
+- ✅ Supports 40+ programming languages
+- ✅ No rate limits (public instance)
 
 ## Security Notes
 
-⚠️ **Important**: This is a development version. For production use:
-- Implement proper sandboxing (Docker containers)
-- Add rate limiting
-- Validate and sanitize all inputs
-- Set resource limits (memory, CPU)
-- Implement user authentication
-- Add CORS policies
+✅ **Production Ready**: Piston provides secure containerized execution
+✅ **No API Key**: No authentication required
+✅ **No Server Required**: Works perfectly on serverless platforms
+✅ **Open Source**: Self-host if needed for private use
 
 ## Build for Production
 
