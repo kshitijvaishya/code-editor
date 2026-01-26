@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { Contest } from '@/lib/contest';
 import { Problem, getProblemById } from '@/lib/problems';
-import { Play, Trophy, Users, Clock, CheckCircle2, XCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Play, Trophy, Users, Clock, CheckCircle2, XCircle, AlertCircle, ArrowLeft, Shield } from 'lucide-react';
 
 interface Submission {
   id: string;
@@ -23,6 +23,7 @@ export default function ContestPage() {
   const contestId = params.id as string;
 
   const [contest, setContest] = useState<Contest | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [problems, setProblems] = useState<Problem[]>([]);
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
   const [activeTab, setActiveTab] = useState<'problems' | 'leaderboard'>('problems');
@@ -43,9 +44,22 @@ export default function ContestPage() {
   const [isRunning, setIsRunning] = useState(false);
 
   useEffect(() => {
+    loadCurrentUser();
     loadContestData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contestId]);
+
+  const loadCurrentUser = async () => {
+    try {
+      const response = await fetch('/api/auth/me');
+      const data = await response.json();
+      if (data.success) {
+        setCurrentUser(data.user);
+      }
+    } catch (error) {
+      console.error('Failed to load current user:', error);
+    }
+  };
 
   // Update contest status every 5 seconds if contest is upcoming
   useEffect(() => {
@@ -708,30 +722,43 @@ export default function ContestPage() {
 
                 {/* Start Button */}
                 <div className="text-center">
-                  {contest.status === 'live' ? (
-                    <button
-                      onClick={handleStartContest}
-                      className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg font-bold rounded-xl shadow-lg shadow-purple-600/30 hover:shadow-purple-600/50 transition-all transform hover:scale-105"
-                    >
-                      <Play className="h-6 w-6" />
-                      Start Contest
-                    </button>
-                  ) : contest.status === 'upcoming' ? (
-                    <div className="text-center">
-                      <div className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500/10 border border-blue-500/30 text-blue-400 rounded-xl">
-                        <Clock className="h-5 w-5" />
-                        <span className="font-medium">Contest hasn&apos;t started yet</span>
+                  <div className="flex items-center justify-center gap-4">
+                    {contest.status === 'live' ? (
+                      <button
+                        onClick={handleStartContest}
+                        className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg font-bold rounded-xl shadow-lg shadow-purple-600/30 hover:shadow-purple-600/50 transition-all transform hover:scale-105"
+                      >
+                        <Play className="h-6 w-6" />
+                        Start Contest
+                      </button>
+                    ) : contest.status === 'upcoming' ? (
+                      <div className="text-center">
+                        <div className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500/10 border border-blue-500/30 text-blue-400 rounded-xl">
+                          <Clock className="h-5 w-5" />
+                          <span className="font-medium">Contest hasn&apos;t started yet</span>
+                        </div>
+                        <p className="text-gray-400 mt-3">Come back at {new Date(contest.startTime).toLocaleString()}</p>
                       </div>
-                      <p className="text-gray-400 mt-3">Come back at {new Date(contest.startTime).toLocaleString()}</p>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={handleStartContest}
-                      className="inline-flex items-center gap-3 px-8 py-4 bg-gray-700 hover:bg-gray-600 text-white text-lg font-bold rounded-xl transition-all"
-                    >
-                      View Results & Solutions
-                    </button>
-                  )}
+                    ) : (
+                      <button
+                        onClick={handleStartContest}
+                        className="inline-flex items-center gap-3 px-8 py-4 bg-gray-700 hover:bg-gray-600 text-white text-lg font-bold rounded-xl transition-all"
+                      >
+                        View Results & Solutions
+                      </button>
+                    )}
+                    
+                    {/* Moderation Button - Only visible to contest host */}
+                    {currentUser && contest.creatorId === currentUser.userId && (
+                      <button
+                        onClick={() => router.push(`/contest/${contestId}/moderate`)}
+                        className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-lg font-bold rounded-xl shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 transition-all transform hover:scale-105"
+                      >
+                        <Shield className="h-6 w-6" />
+                        Moderation Panel
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -943,6 +970,23 @@ export default function ContestPage() {
                           <textarea
                             value={code}
                             onChange={(e) => setCode(e.target.value)}
+                            onCopy={(e) => e.preventDefault()}
+                            onCut={(e) => e.preventDefault()}
+                            onPaste={(e) => e.preventDefault()}
+                            onContextMenu={(e) => e.preventDefault()}
+                            onDragStart={(e) => e.preventDefault()}
+                            onDrop={(e) => e.preventDefault()}
+                            onKeyDown={(e) => {
+                              // Prevent Ctrl+C, Ctrl+V, Ctrl+X
+                              if (e.ctrlKey || e.metaKey) {
+                                if (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'a') {
+                                  if (e.key !== 'a') { // Allow Ctrl+A for select all
+                                    e.preventDefault();
+                                    alert('Copy/Paste operations are disabled during the contest for security reasons.');
+                                  }
+                                }
+                              }
+                            }}
                             className="w-full h-full p-4 bg-gray-950 text-white font-mono text-sm resize-none focus:outline-none"
                             placeholder="// Write your code here..."
                             spellCheck={false}
