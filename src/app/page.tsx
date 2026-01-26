@@ -27,7 +27,7 @@ export default function Home() {
                 Sign In
               </button>
               <Link 
-                href="/editor"
+                href="/dashboard"
                 className="inline-flex items-center justify-center px-6 py-2 font-mono bg-purple-600 text-white hover:bg-purple-700 transition-colors"
               >
                 Start Coding →
@@ -69,7 +69,7 @@ export default function Home() {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
               <Link 
-                href="/editor"
+                href="/dashboard"
                 className="group inline-flex items-center justify-center px-8 py-4 font-mono text-lg bg-purple-600 text-white hover:bg-purple-700 transition-all rounded-lg shadow-lg shadow-purple-600/50 hover:shadow-purple-600/70 hover:scale-105"
               >
                 <Play className="h-5 w-5 mr-2 group-hover:translate-x-1 transition-transform" />
@@ -530,7 +530,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-12">
               <Link 
-                href="/editor"
+                href="/dashboard"
                 className="group inline-flex items-center justify-center px-10 py-5 font-mono text-xl bg-white text-purple-600 hover:bg-gray-100 transition-all rounded-xl shadow-2xl hover:scale-105 font-semibold"
               >
                 Start Coding Free

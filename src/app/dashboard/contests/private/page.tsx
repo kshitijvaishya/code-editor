@@ -1,0 +1,172 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Sidebar from '@/components/Sidebar';
+import CreateContestModal from '@/components/CreateContestModal';
+import JoinContestModal from '@/components/JoinContestModal';
+import JoinCodeSuccessDialog from '@/components/JoinCodeSuccessDialog';
+import ContestCard from '@/components/ContestCard';
+import { Contest } from '@/lib/contest';
+import { Plus, UserPlus, Trophy, AlertCircle } from 'lucide-react';
+
+export default function PrivateContestsPage() {
+  const [contests, setContests] = useState<Contest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [createdContest, setCreatedContest] = useState<{ name: string; joinCode: string } | null>(null);
+
+  // Mock user ID (in production, this would come from auth context)
+  const currentUserId = 'user123';
+
+  useEffect(() => {
+    loadContests();
+  }, []);
+
+  const loadContests = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/contests/my-contests');
+      const data = await response.json();
+      if (data.success) {
+        setContests(data.contests || []);
+      }
+    } catch (error) {
+      console.error('Failed to load contests:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateSuccess = (joinCode: string, contestName: string) => {
+    setCreatedContest({ name: contestName, joinCode });
+    setShowSuccessDialog(true);
+    loadContests();
+  };
+
+  const handleJoinSuccess = () => {
+    setSuccessMessage('Successfully joined the contest!');
+    setTimeout(() => setSuccessMessage(''), 5000);
+    loadContests();
+  };
+
+  const myContests = contests.filter(c => c.creatorId === currentUserId || c.participants.some(p => p.userId === currentUserId));
+  const createdContests = myContests.filter(c => c.creatorId === currentUserId);
+  const joinedContests = myContests.filter(c => c.creatorId !== currentUserId);
+
+  return (
+    <div className="flex h-screen bg-gray-950 overflow-hidden">
+      <Sidebar />
+
+      <main className="flex-1 overflow-auto">
+        <div className="min-h-full p-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-3">
+              <Trophy className="h-8 w-8 text-purple-400" />
+              <h1 className="text-4xl font-bold text-white">Private Contests</h1>
+            </div>
+            <p className="text-gray-400">Create or join private contests with a unique join code</p>
+          </div>
+
+          {/* Success Message */}
+          {successMessage && (
+            <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-green-400 font-medium">{successMessage}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="grid md:grid-cols-2 gap-4 mb-8">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="group flex items-center justify-center gap-3 p-6 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-all shadow-lg shadow-purple-600/20 hover:shadow-purple-600/40 hover:scale-105"
+            >
+              <Plus className="h-6 w-6" />
+              <span className="text-lg font-semibold">Create New Contest</span>
+            </button>
+            
+            <button
+              onClick={() => setShowJoinModal(true)}
+              className="group flex items-center justify-center gap-3 p-6 border-2 border-gray-700 hover:bg-gray-800 text-white rounded-xl transition-all hover:border-purple-600/50"
+            >
+              <UserPlus className="h-6 w-6" />
+              <span className="text-lg font-semibold">Join with Code</span>
+            </button>
+          </div>
+
+          {/* Loading State */}
+          {isLoading && (
+            <div className="text-center py-12">
+              <div className="inline-block h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+              <p className="mt-4 text-gray-400">Loading contests...</p>
+            </div>
+          )}
+
+          {/* Contest Lists */}
+          {!isLoading && myContests.length === 0 && (
+            <div className="text-center py-16">
+              <Trophy className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-400 mb-2">No Contests Yet</h3>
+              <p className="text-gray-500">Create a new contest or join one with a code to get started</p>
+            </div>
+          )}
+
+          {!isLoading && createdContests.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                My Created Contests
+                <span className="text-sm font-normal text-gray-400">({createdContests.length})</span>
+              </h2>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {createdContests.map((contest) => (
+                  <ContestCard key={contest.id} contest={contest} isCreator={true} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!isLoading && joinedContests.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                Joined Contests
+                <span className="text-sm font-normal text-gray-400">({joinedContests.length})</span>
+              </h2>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {joinedContests.map((contest) => (
+                  <ContestCard key={contest.id} contest={contest} isCreator={false} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Modals */}
+      <CreateContestModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={handleCreateSuccess}
+      />
+      <JoinContestModal
+        isOpen={showJoinModal}
+        onClose={() => setShowJoinModal(false)}
+        onSuccess={handleJoinSuccess}
+      />
+      <JoinCodeSuccessDialog
+        isOpen={showSuccessDialog}
+        joinCode={createdContest?.joinCode || ''}
+        contestName={createdContest?.name || ''}
+        onClose={() => {
+          setShowSuccessDialog(false);
+          setCreatedContest(null);
+        }}
+      />
+    </div>
+  );
+}

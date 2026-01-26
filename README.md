@@ -17,6 +17,9 @@ A CodeChef-style online code compiler built with Next.js and TypeScript that sup
 - 📝 Custom input support
 - 💻 Clean, modern UI similar to CodeChef
 - ⚡ Fast compilation and execution
+- 🏆 Private Contest System with join codes
+- 👤 User Dashboard with Profile and Code Editor
+- 🎯 Sidebar navigation for easy access
 
 ## Prerequisites
 
