@@ -66,11 +66,29 @@ export default function PrivateContestsPage() {
       const data = await response.json();
       console.log('Contests loaded:', data);
       if (data.success) {
-        setContests(data.contests || []);
+        // Recalculate status for each contest on client side
+        const contestsWithUpdatedStatus = (data.contests || []).map((contest: Contest) => {
+          const now = new Date();
+          const start = new Date(contest.startTime);
+          const end = new Date(contest.endTime);
+          
+          let status: 'upcoming' | 'live' | 'ended' = 'upcoming';
+          if (now < start) {
+            status = 'upcoming';
+          } else if (now >= start && now <= end) {
+            status = 'live';
+          } else {
+            status = 'ended';
+          }
+          
+          return { ...contest, status };
+        });
+        
+        setContests(contestsWithUpdatedStatus);
         
         // Load stats for each contest
         const stats: Record<string, { rank: number; score: number; hasSubmitted: boolean }> = {};
-        for (const contest of data.contests || []) {
+        for (const contest of contestsWithUpdatedStatus) {
           try {
             const statsResponse = await fetch(`/api/contests/details?id=${contest.id}`);
             const statsData = await statsResponse.json();

@@ -44,6 +44,33 @@ export default function ContestPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contestId]);
 
+  // Update contest status every 5 seconds if contest is upcoming
+  useEffect(() => {
+    if (!contest || contest.status !== 'upcoming') return;
+
+    const updateStatus = () => {
+      const now = new Date();
+      const start = new Date(contest.startTime);
+      const end = new Date(contest.endTime);
+      
+      let newStatus: 'upcoming' | 'live' | 'ended' = 'upcoming';
+      if (now < start) {
+        newStatus = 'upcoming';
+      } else if (now >= start && now <= end) {
+        newStatus = 'live';
+      } else {
+        newStatus = 'ended';
+      }
+
+      if (newStatus !== contest.status) {
+        setContest({ ...contest, status: newStatus });
+      }
+    };
+
+    const interval = setInterval(updateStatus, 5000); // Check every 5 seconds
+    return () => clearInterval(interval);
+  }, [contest]);
+
   // Real-time countdown timer
   useEffect(() => {
     if (!contest || !hasStarted) return;
@@ -97,7 +124,22 @@ export default function ContestPage() {
       const data = await response.json();
 
       if (data.success) {
-        setContest(data.contest);
+        const contestData = data.contest;
+        
+        // Recalculate contest status on client side
+        const now = new Date();
+        const start = new Date(contestData.startTime);
+        const end = new Date(contestData.endTime);
+        
+        if (now < start) {
+          contestData.status = 'upcoming';
+        } else if (now >= start && now <= end) {
+          contestData.status = 'live';
+        } else {
+          contestData.status = 'ended';
+        }
+        
+        setContest(contestData);
         setLeaderboard(data.leaderboard || []);
         setUserSubmissions(data.userSubmissions || []);
 
@@ -111,7 +153,7 @@ export default function ContestPage() {
         }
 
         // Load problems
-        const loadedProblems = data.contest.problemIds
+        const loadedProblems = contestData.problemIds
           .map((id: string) => getProblemById(id))
           .filter((p: Problem | undefined): p is Problem => p !== undefined);
         
