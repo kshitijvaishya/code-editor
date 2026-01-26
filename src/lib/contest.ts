@@ -4,6 +4,7 @@ export type ContestStatus = 'upcoming' | 'live' | 'ended';
 export interface Contest {
   id: string;
   name: string;
+  description?: string;
   startTime: string;
   endTime: string;
   status: ContestStatus;
@@ -12,18 +13,39 @@ export interface Contest {
   createdAt: string;
   participants: Participant[];
   participantLimit?: number;
+  problemIds: string[]; // IDs of problems in this contest
+  submissions?: ContestSubmission[];
 }
 
 export interface Participant {
   userId: string;
   username: string;
   joinedAt: string;
+  score?: number;
+  problemsSolved?: number;
+}
+
+export interface ContestSubmission {
+  id: string;
+  userId: string;
+  username: string;
+  problemId: string;
+  status: 'Accepted' | 'Wrong Answer' | 'Time Limit Exceeded' | 'Runtime Error' | 'Compilation Error';
+  language: string;
+  code: string;
+  testsPassed: number;
+  totalTests: number;
+  submittedAt: string;
+  executionTime?: number;
+  points: number;
 }
 
 export interface CreateContestRequest {
   name: string;
+  description?: string;
   startTime: string;
   endTime: string;
+  problemIds: string[];
 }
 
 export interface JoinContestRequest {

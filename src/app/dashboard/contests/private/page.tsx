@@ -11,27 +11,86 @@ import { Plus, UserPlus, Trophy, AlertCircle } from 'lucide-react';
 
 export default function PrivateContestsPage() {
   const [contests, setContests] = useState<Contest[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [createdContest, setCreatedContest] = useState<{ name: string; joinCode: string } | null>(null);
-
-  // Mock user ID (in production, this would come from auth context)
-  const currentUserId = 'user123';
+  const [contestStats, setContestStats] = useState<Record<string, { rank: number; score: number; hasSubmitted: boolean }>>({});
 
   useEffect(() => {
-    loadContests();
+    const initializePage = async () => {
+      await loadUser();
+    };
+    initializePage();
   }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      loadContests();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
+
+  // Refresh contests when page becomes visible (after returning from contest)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && currentUser) {
+        loadContests();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
+
+  const loadUser = async () => {
+    try {
+      const response = await fetch('/api/auth/me');
+      const data = await response.json();
+      if (data.success) {
+        setCurrentUser(data.user);
+      }
+    } catch (error) {
+      console.error('Failed to load user:', error);
+    }
+  };
 
   const loadContests = async () => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/contests/my-contests');
       const data = await response.json();
+      console.log('Contests loaded:', data);
       if (data.success) {
         setContests(data.contests || []);
+        
+        // Load stats for each contest
+        const stats: Record<string, { rank: number; score: number; hasSubmitted: boolean }> = {};
+        for (const contest of data.contests || []) {
+          try {
+            const statsResponse = await fetch(`/api/contests/details?id=${contest.id}`);
+            const statsData = await statsResponse.json();
+            if (statsData.success) {
+              const userSubmissions = statsData.userSubmissions || [];
+              const leaderboard = statsData.leaderboard || [];
+              const hasSubmitted = userSubmissions.length > 0;
+              
+              // Find user's rank
+              const userIndex = leaderboard.findIndex((p: any) => p.userId === currentUser?.userId);
+              const rank = userIndex >= 0 ? userIndex + 1 : 0;
+              const score = userIndex >= 0 ? leaderboard[userIndex].score : 0;
+              
+              stats[contest.id] = { rank, score, hasSubmitted };
+            }
+          } catch (error) {
+            console.error(`Failed to load stats for contest ${contest.id}:`, error);
+          }
+        }
+        setContestStats(stats);
       }
     } catch (error) {
       console.error('Failed to load contests:', error);
@@ -52,9 +111,10 @@ export default function PrivateContestsPage() {
     loadContests();
   };
 
-  const myContests = contests.filter(c => c.creatorId === currentUserId || c.participants.some(p => p.userId === currentUserId));
-  const createdContests = myContests.filter(c => c.creatorId === currentUserId);
-  const joinedContests = myContests.filter(c => c.creatorId !== currentUserId);
+  const currentUserId = currentUser?.userId;
+  const myContests = contests;
+  const createdContests = contests.filter(c => c.creatorId === currentUserId);
+  const joinedContests = contests.filter(c => c.creatorId !== currentUserId);
 
   return (
     <div className="flex h-screen bg-gray-950 overflow-hidden">
@@ -109,7 +169,7 @@ export default function PrivateContestsPage() {
           )}
 
           {/* Contest Lists */}
-          {!isLoading && myContests.length === 0 && (
+          {!isLoading && contests.length === 0 && (
             <div className="text-center py-16">
               <Trophy className="h-16 w-16 text-gray-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-400 mb-2">No Contests Yet</h3>
@@ -117,32 +177,51 @@ export default function PrivateContestsPage() {
             </div>
           )}
 
-          {!isLoading && createdContests.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                My Created Contests
-                <span className="text-sm font-normal text-gray-400">({createdContests.length})</span>
-              </h2>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {createdContests.map((contest) => (
-                  <ContestCard key={contest.id} contest={contest} isCreator={true} />
-                ))}
-              </div>
-            </div>
-          )}
+          {!isLoading && contests.length > 0 && (
+            <>
+              {createdContests.length > 0 && (
+                <div className="mb-8">
+                  <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                    My Created Contests
+                    <span className="text-sm font-normal text-gray-400">({createdContests.length})</span>
+                  </h2>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {createdContests.map((contest) => (
+                      <ContestCard 
+                        key={contest.id} 
+                        contest={contest} 
+                        isCreator={true}
+                        userRank={contestStats[contest.id]?.rank}
+                        userScore={contestStats[contest.id]?.score}
+                        hasSubmitted={contestStats[contest.id]?.hasSubmitted}
+                        onDelete={loadContests}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
 
-          {!isLoading && joinedContests.length > 0 && (
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                Joined Contests
-                <span className="text-sm font-normal text-gray-400">({joinedContests.length})</span>
-              </h2>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {joinedContests.map((contest) => (
-                  <ContestCard key={contest.id} contest={contest} isCreator={false} />
-                ))}
-              </div>
-            </div>
+              {joinedContests.length > 0 && (
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                    Joined Contests
+                    <span className="text-sm font-normal text-gray-400">({joinedContests.length})</span>
+                  </h2>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {joinedContests.map((contest) => (
+                      <ContestCard 
+                        key={contest.id} 
+                        contest={contest} 
+                        isCreator={false}
+                        userRank={contestStats[contest.id]?.rank}
+                        userScore={contestStats[contest.id]?.score}
+                        hasSubmitted={contestStats[contest.id]?.hasSubmitted}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>

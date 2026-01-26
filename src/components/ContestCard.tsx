@@ -1,19 +1,32 @@
 'use client';
 
 import { Contest } from '@/lib/contest';
-import { Calendar, Clock, Users, Copy, Check } from 'lucide-react';
+import { Calendar, Clock, Users, Copy, Check, Code2, Medal, CheckCircle, Trash2 } from 'lucide-react';
 import { formatDateTime, formatDuration } from '@/lib/contest';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface ContestCardProps {
   contest: Contest;
   isCreator: boolean;
+  userRank?: number;
+  userScore?: number;
+  hasSubmitted?: boolean;
+  onDelete?: () => void;
 }
 
-export default function ContestCard({ contest, isCreator }: ContestCardProps) {
+export default function ContestCard({ contest, isCreator, userRank, userScore, hasSubmitted, onDelete }: ContestCardProps) {
   const [copied, setCopied] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
 
   const getStatusColor = () => {
+    // If user has submitted (completed the contest), show completed status
+    if (!isCreator && hasSubmitted && contest.status === 'live') {
+      return 'bg-purple-500/10 border-purple-500/30 text-purple-400';
+    }
+    
     switch (contest.status) {
       case 'upcoming':
         return 'bg-blue-500/10 border-blue-500/30 text-blue-400';
@@ -25,6 +38,11 @@ export default function ContestCard({ contest, isCreator }: ContestCardProps) {
   };
 
   const getStatusText = () => {
+    // If user has submitted (completed the contest), show "Completed" instead of "Live"
+    if (!isCreator && hasSubmitted && contest.status === 'live') {
+      return 'Completed';
+    }
+    
     switch (contest.status) {
       case 'upcoming':
         return 'Upcoming';
@@ -41,22 +59,121 @@ export default function ContestCard({ contest, isCreator }: ContestCardProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleEnterContest = () => {
+    router.push(`/contest/${contest.id}`);
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/contests/delete?id=${contest.id}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setShowDeleteConfirm(false);
+        onDelete?.();
+      } else {
+        alert(data.message || 'Failed to delete contest');
+      }
+    } catch (error) {
+      alert('Failed to delete contest');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-purple-600/30 transition-all">
+    <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-purple-600/30 transition-all relative">
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="absolute inset-0 bg-gray-950/95 backdrop-blur-sm z-10 rounded-xl flex items-center justify-center p-6">
+          <div className="text-center">
+            <Trash2 className="h-12 w-12 text-red-400 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-white mb-2">Delete Contest?</h3>
+            <p className="text-sm text-gray-400 mb-6">
+              This action cannot be undone. All submissions and data will be permanently deleted.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <h3 className="text-lg font-bold text-white mb-1">{contest.name}</h3>
-          {isCreator && (
-            <span className="inline-block px-2 py-1 text-xs font-medium bg-purple-600/20 text-purple-300 border border-purple-500/30 rounded">
-              Creator
-            </span>
+          <div className="flex items-start justify-between">
+            <h3 className="text-lg font-bold text-white mb-1">{contest.name}</h3>
+            {isCreator && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="p-1.5 hover:bg-red-600/20 text-red-400 rounded-lg transition-colors ml-2"
+                title="Delete contest"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          {contest.description && (
+            <p className="text-sm text-gray-400 mb-2">{contest.description}</p>
           )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {isCreator && (
+              <span className="inline-block px-2 py-1 text-xs font-medium bg-purple-600/20 text-purple-300 border border-purple-500/30 rounded">
+                Creator
+              </span>
+            )}
+            {hasSubmitted && !isCreator && (
+              <span className="inline-block px-2 py-1 text-xs font-medium bg-green-600/20 text-green-300 border border-green-500/30 rounded flex items-center gap-1">
+                <CheckCircle className="h-3 w-3" />
+                Submitted
+              </span>
+            )}
+          </div>
         </div>
         <span className={`px-3 py-1 text-xs font-semibold border rounded-full ${getStatusColor()}`}>
           {getStatusText()}
         </span>
       </div>
+
+      {/* User Stats (for joined contests with submissions) */}
+      {!isCreator && hasSubmitted && (userRank !== undefined || userScore !== undefined) && (
+        <div className="mb-4 p-3 bg-gradient-to-r from-purple-600/10 to-blue-600/10 border border-purple-500/30 rounded-lg">
+          <div className="flex items-center justify-between">
+            {userRank !== undefined && (
+              <div className="flex items-center gap-2">
+                <Medal className="h-5 w-5 text-yellow-400" />
+                <div>
+                  <p className="text-xs text-gray-400">Your Rank</p>
+                  <p className="text-lg font-bold text-white">#{userRank}</p>
+                </div>
+              </div>
+            )}
+            {userScore !== undefined && (
+              <div className="text-right">
+                <p className="text-xs text-gray-400">Score</p>
+                <p className="text-lg font-bold text-purple-400">{userScore} pts</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Details */}
       <div className="space-y-3 mb-4">
@@ -75,6 +192,12 @@ export default function ContestCard({ contest, isCreator }: ContestCardProps) {
             {contest.participantLimit && ` / ${contest.participantLimit}`}
           </span>
         </div>
+        {contest.problemIds && contest.problemIds.length > 0 && (
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <Code2 className="h-4 w-4" />
+            <span>{contest.problemIds.length} problems</span>
+          </div>
+        )}
       </div>
 
       {/* Join Code (Only for Creator and Upcoming/Live) */}
@@ -103,18 +226,35 @@ export default function ContestCard({ contest, isCreator }: ContestCardProps) {
       )}
 
       {/* Action Button */}
-      {contest.status === 'live' && (
-        <button className="w-full mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
+      {contest.status === 'live' && !hasSubmitted && (
+        <button 
+          onClick={handleEnterContest}
+          className="w-full mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+        >
           Enter Contest
         </button>
       )}
-      {contest.status === 'upcoming' && !isCreator && (
-        <button className="w-full mt-4 px-4 py-2 bg-gray-700 text-gray-300 rounded-lg font-medium cursor-not-allowed">
-          Waiting to Start
+      {contest.status === 'live' && hasSubmitted && !isCreator && (
+        <button 
+          onClick={handleEnterContest}
+          className="w-full mt-4 px-4 py-2 border border-purple-600 bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 rounded-lg font-medium transition-colors"
+        >
+          View Submissions & Leaderboard
+        </button>
+      )}
+      {contest.status === 'upcoming' && (
+        <button 
+          onClick={handleEnterContest}
+          className="w-full mt-4 px-4 py-2 border border-gray-700 hover:bg-gray-800 text-white rounded-lg font-medium transition-colors"
+        >
+          View Contest
         </button>
       )}
       {contest.status === 'ended' && (
-        <button className="w-full mt-4 px-4 py-2 border border-gray-700 hover:bg-gray-800 text-white rounded-lg font-medium transition-colors">
+        <button 
+          onClick={handleEnterContest}
+          className="w-full mt-4 px-4 py-2 border border-gray-700 hover:bg-gray-800 text-white rounded-lg font-medium transition-colors"
+        >
           View Results
         </button>
       )}

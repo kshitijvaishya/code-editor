@@ -6,7 +6,7 @@ import { getCurrentUser } from '@/lib/auth';
 export async function POST(request: NextRequest) {
   try {
     const body: CreateContestRequest = await request.json();
-    const { name, startTime, endTime } = body;
+    const { name, description, startTime, endTime, problemIds } = body;
 
     // Validation
     if (!name || !name.trim()) {
@@ -23,6 +23,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!problemIds || problemIds.length === 0) {
+      return NextResponse.json(
+        { success: false, message: 'At least one problem is required' },
+        { status: 400 }
+      );
+    }
+
     const start = new Date(startTime);
     const end = new Date(endTime);
     const now = new Date();
@@ -34,9 +41,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (start <= now) {
+    if (start < now) {
       return NextResponse.json(
-        { success: false, message: 'Start time must be in the future' },
+        { success: false, message: 'Start time cannot be in the past' },
         { status: 400 }
       );
     }
@@ -63,7 +70,9 @@ export async function POST(request: NextRequest) {
       startTime,
       endTime,
       user.userId,
-      user.username
+      user.username,
+      problemIds,
+      description
     );
 
     return NextResponse.json({
