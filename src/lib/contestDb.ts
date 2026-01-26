@@ -10,7 +10,7 @@ class ContestDatabase {
     return db.collection<Contest>('contests');
   }
 
-  async createContest(name: string, startTime: string, endTime: string, creatorId: string, creatorUsername: string): Promise<{ contest: Contest; joinCode: string }> {
+  async createContest(name: string, startTime: string, endTime: string, creatorId: string, creatorUsername: string, problemIds: string[] = [], description?: string): Promise<{ contest: Contest; joinCode: string }> {
     const contestId = `contest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     let joinCode: string;
     const collection = await this.getContestsCollection();
@@ -25,6 +25,7 @@ class ContestDatabase {
     const contest: Contest = {
       id: contestId,
       name,
+      description,
       startTime,
       endTime,
       status: getContestStatus(startTime, endTime),
@@ -35,7 +36,11 @@ class ContestDatabase {
         userId: creatorId,
         username: creatorUsername,
         joinedAt: new Date().toISOString(),
+        score: 0,
+        problemsSolved: 0,
       }],
+      problemIds: problemIds.length > 0 ? problemIds : [],
+      submissions: [],
     };
 
     await collection.insertOne(contest as any);
@@ -132,6 +137,8 @@ class ContestDatabase {
       userId,
       username,
       joinedAt: new Date().toISOString(),
+      score: 0,
+      problemsSolved: 0,
     };
 
     const collection = await this.getContestsCollection();
@@ -145,6 +152,91 @@ class ContestDatabase {
     return { success: true, message: 'Successfully joined contest', contest };
   }
 
+  async submitSolution(contestId: string, userId: string, username: string, problemId: string, code: string, language: string, status: string, testsPassed: number, totalTests: number, executionTime: number, points: number): Promise<{ success: boolean; message: string }> {
+    const collection = await this.getContestsCollection();
+    const contest = await this.getContestById(contestId);
+
+    if (!contest) {
+      return { success: false, message: 'Contest not found' };
+    }
+
+    if (contest.status !== 'live') {
+      return { success: false, message: 'Contest is not active' };
+    }
+
+    const submission: any = {
+      id: `sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userId,
+      username,
+      problemId,
+      status,
+      language,
+      code,
+      testsPassed,
+      totalTests,
+      submittedAt: new Date().toISOString(),
+      executionTime,
+      points: status === 'Accepted' ? points : 0,
+    };
+
+    // Add submission to contest
+    await collection.updateOne(
+      { id: contestId },
+      { 
+        $push: { submissions: submission }
+      }
+    );
+
+    // Update participant score if accepted
+    if (status === 'Accepted') {
+      const participant = contest.participants.find(p => p.userId === userId);
+      if (participant) {
+        // Check if this is a new problem solved
+        const existingAccepted = contest.submissions?.filter(
+          s => s.userId === userId && s.problemId === problemId && s.status === 'Accepted'
+        );
+        
+        const isFirstAccepted = !existingAccepted || existingAccepted.length === 0;
+        
+        await collection.updateOne(
+          { id: contestId, 'participants.userId': userId },
+          { 
+            $inc: { 
+              'participants.$.score': points,
+              'participants.$.problemsSolved': isFirstAccepted ? 1 : 0
+            }
+          }
+        );
+      }
+    }
+
+    return { success: true, message: 'Submission recorded' };
+  }
+
+  async getContestSubmissions(contestId: string, userId?: string): Promise<any[]> {
+    const contest = await this.getContestById(contestId);
+    if (!contest || !contest.submissions) return [];
+
+    if (userId) {
+      return contest.submissions.filter(s => s.userId === userId);
+    }
+
+    return contest.submissions;
+  }
+
+  async getContestLeaderboard(contestId: string): Promise<Participant[]> {
+    const contest = await this.getContestById(contestId);
+    if (!contest) return [];
+
+    // Sort participants by score (descending), then by problems solved
+    return [...contest.participants].sort((a, b) => {
+      if ((b.score || 0) !== (a.score || 0)) {
+        return (b.score || 0) - (a.score || 0);
+      }
+      return (b.problemsSolved || 0) - (a.problemsSolved || 0);
+    });
+  }
+
   // Clean up expired join codes (for contests that have ended)
   async cleanupExpiredCodes(): Promise<void> {
     const collection = await this.getContestsCollection();
@@ -154,6 +246,12 @@ class ContestDatabase {
     await collection.deleteMany({
       endTime: { $lt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString() }
     });
+  }
+
+  async deleteContest(contestId: string): Promise<boolean> {
+    const collection = await this.getContestsCollection();
+    const result = await collection.deleteOne({ id: contestId });
+    return result.deletedCount > 0;
   }
 }
 
