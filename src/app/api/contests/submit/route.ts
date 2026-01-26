@@ -3,6 +3,8 @@ import { contestDb } from '@/lib/contestDb';
 import { getCurrentUser } from '@/lib/auth';
 import { getProblemById } from '@/lib/problems';
 
+export const dynamic = 'force-dynamic';
+
 // Submit a solution to a contest problem
 export async function POST(request: NextRequest) {
   try {

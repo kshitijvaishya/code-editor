@@ -3,6 +3,8 @@ import { contestDb } from '@/lib/contestDb';
 import { CreateContestRequest } from '@/lib/contest';
 import { getCurrentUser } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const body: CreateContestRequest = await request.json();

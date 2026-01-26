@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { contestDb } from '@/lib/contestDb';
 import { getCurrentUser } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function DELETE(request: NextRequest) {
   try {
     const user = await getCurrentUser(request);

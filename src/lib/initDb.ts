@@ -8,6 +8,7 @@ export async function initializeDatabase() {
     const db = await getDatabase();
     const contests = db.collection('contests');
     const users = db.collection('users');
+    const contestEntries = db.collection('contest_entries');
 
     // Create indexes for contests
     await contests.createIndex({ joinCode: 1 }, { unique: true });
@@ -19,6 +20,11 @@ export async function initializeDatabase() {
     // Create indexes for users
     await users.createIndex({ email: 1 }, { unique: true });
     await users.createIndex({ id: 1 }, { unique: true });
+
+    // Create indexes for contest entries
+    await contestEntries.createIndex({ contestId: 1, userId: 1 }, { unique: true });
+    await contestEntries.createIndex({ userId: 1 });
+    await contestEntries.createIndex({ contestId: 1 });
 
     console.log('Database indexes initialized successfully');
   } catch (error) {

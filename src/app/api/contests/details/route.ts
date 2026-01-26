@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { contestDb } from '@/lib/contestDb';
 import { getCurrentUser } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 // Get contest details including problems and submissions
 export async function GET(request: NextRequest) {
   try {

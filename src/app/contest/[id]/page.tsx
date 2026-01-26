@@ -38,6 +38,9 @@ export default function ContestPage() {
   const [showFullscreenWarning, setShowFullscreenWarning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [warningCount, setWarningCount] = useState(0);
+  const [customInput, setCustomInput] = useState('');
+  const [output, setOutput] = useState('');
+  const [isRunning, setIsRunning] = useState(false);
 
   useEffect(() => {
     loadContestData();
@@ -143,13 +146,25 @@ export default function ContestPage() {
         setLeaderboard(data.leaderboard || []);
         setUserSubmissions(data.userSubmissions || []);
 
-        // Check if user has already submitted - if so, prevent re-entry
-        const hasUserSubmitted = (data.userSubmissions || []).length > 0;
-        if (hasUserSubmitted && !hasStarted) {
-          // User already completed this contest, redirect to dashboard
-          alert('You have already completed this contest!\n\nView your results and rank on the dashboard.');
-          router.push('/dashboard/contests/private');
-          return;
+        // Check if user has already started this contest
+        const startCheckResponse = await fetch(`/api/contests/start?contestId=${contestId}`);
+        const startCheckData = await startCheckResponse.json();
+        
+        if (startCheckData.success && startCheckData.hasStarted) {
+          // User has already started - check if they have submissions
+          const hasUserSubmitted = (data.userSubmissions || []).length > 0;
+          
+          if (hasUserSubmitted) {
+            // User already completed - allow viewing results but not re-entry
+            // Don't redirect, just prevent starting again
+            setShowInstructions(false);
+            setActiveTab('leaderboard');
+          } else if (contestData.status === 'live') {
+            // User started but abandoned and contest is still live - prevent re-entry
+            alert('You already started this contest!\n\nFor security reasons, you cannot re-enter. View your results on the dashboard.');
+            router.push('/dashboard/contests/private');
+            return;
+          }
         }
 
         // Load problems
@@ -199,6 +214,37 @@ export default function ContestPage() {
       setSubmitResult({ status: 'Error', message: 'Failed to submit solution' });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleRunCode = async () => {
+    if (!code.trim()) return;
+
+    setIsRunning(true);
+    setOutput('');
+
+    try {
+      const response = await fetch('/api/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code,
+          language,
+          input: customInput,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setOutput(data.output || 'Program completed successfully with no output.');
+      } else {
+        setOutput(`Error: ${data.error || 'Failed to execute code'}`);
+      }
+    } catch (error) {
+      setOutput(`Error: Failed to run code. Please try again.`);
+    } finally {
+      setIsRunning(false);
     }
   };
 
@@ -300,6 +346,31 @@ export default function ContestPage() {
 
   const confirmStartContest = async () => {
     setShowFullscreenWarning(false);
+    
+    // Record that user has started the contest
+    try {
+      const response = await fetch('/api/contests/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contestId: contest?.id }),
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        if (data.alreadyStarted) {
+          alert('You have already started this contest!\n\nFor security reasons, you cannot re-enter.');
+          router.push('/dashboard/contests/private');
+          return;
+        }
+        throw new Error(data.message);
+      }
+    } catch (error) {
+      console.error('Failed to record contest start:', error);
+      alert('Failed to start contest. Please try again.');
+      return;
+    }
+    
     await enterFullscreen();
     setShowInstructions(false);
     setHasStarted(true);
@@ -360,8 +431,8 @@ export default function ContestPage() {
 
   return (
     <div className="flex h-screen bg-gray-950">
-      {/* Sidebar - Always visible */}
-      {hasStarted && <Sidebar />}
+      {/* Sidebar - Only visible when contest hasn't started */}
+      {!hasStarted && <Sidebar />}
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Enhanced Header with Real-time Timer */}
@@ -821,11 +892,19 @@ export default function ContestPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <button
+                            onClick={handleRunCode}
+                            disabled={isRunning || !code.trim()}
+                            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white text-sm font-semibold rounded-lg transition-all flex items-center gap-2"
+                          >
+                            <Play className="h-4 w-4" />
+                            {isRunning ? 'Running...' : 'Run Code'}
+                          </button>
+                          <button
                             onClick={handleSubmit}
                             disabled={isSubmitting || !code.trim() || contest.status !== 'live'}
                             className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-semibold rounded-lg transition-all flex items-center gap-2"
                           >
-                            <Play className="h-4 w-4" />
+                            <CheckCircle2 className="h-4 w-4" />
                             {isSubmitting ? 'Submitting...' : 'Submit'}
                           </button>
                         </div>
@@ -857,15 +936,52 @@ export default function ContestPage() {
                         </div>
                       )}
 
-                      {/* Code Editor */}
-                      <div className="flex-1 overflow-hidden">
-                        <textarea
-                          value={code}
-                          onChange={(e) => setCode(e.target.value)}
-                          className="w-full h-full p-4 bg-gray-950 text-white font-mono text-sm resize-none focus:outline-none"
-                          placeholder="# Write your code here..."
-                          spellCheck={false}
-                        />
+                      {/* Code Editor and Panels */}
+                      <div className="flex-1 flex flex-col overflow-hidden">
+                        {/* Code Editor */}
+                        <div className="flex-1 overflow-hidden">
+                          <textarea
+                            value={code}
+                            onChange={(e) => setCode(e.target.value)}
+                            className="w-full h-full p-4 bg-gray-950 text-white font-mono text-sm resize-none focus:outline-none"
+                            placeholder="// Write your code here..."
+                            spellCheck={false}
+                          />
+                        </div>
+
+                        {/* Input/Output Panels */}
+                        <div className="h-48 flex border-t border-gray-800">
+                          {/* Input Panel */}
+                          <div className="flex-1 flex flex-col border-r border-gray-800">
+                            <div className="px-4 py-2 bg-gray-900 border-b border-gray-800 text-sm font-semibold text-gray-400">
+                              Input
+                            </div>
+                            <textarea
+                              value={customInput}
+                              onChange={(e) => setCustomInput(e.target.value)}
+                              className="flex-1 p-3 bg-gray-950 text-white font-mono text-sm resize-none focus:outline-none"
+                              placeholder="Enter custom input here..."
+                              spellCheck={false}
+                            />
+                          </div>
+
+                          {/* Output Panel */}
+                          <div className="flex-1 flex flex-col">
+                            <div className="px-4 py-2 bg-gray-900 border-b border-gray-800 text-sm font-semibold text-gray-400">
+                              Output
+                            </div>
+                            <div className="flex-1 p-3 bg-gray-950 text-white font-mono text-sm overflow-y-auto whitespace-pre-wrap">
+                              {isRunning ? (
+                                <div className="flex items-center gap-2 text-gray-400">
+                                  <div className="animate-spin h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full"></div>
+                                  Running...
+                                </div>
+                              ) : (
+                                output || <span className="text-gray-600">Output will appear here...</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Footer Info */}

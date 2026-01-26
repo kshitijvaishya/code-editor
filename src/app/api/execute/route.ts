@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     if (!language || !code) {
       return NextResponse.json(
-        { error: 'Language and code are required' },
+        { success: false, error: 'Language and code are required' },
         { status: 400 }
       );
     }
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     const langConfig = languageMap[language];
     if (!langConfig) {
       return NextResponse.json(
-        { error: `Unsupported language: ${language}` },
+        { success: false, error: `Unsupported language: ${language}` },
         { status: 400 }
       );
     }
@@ -93,14 +93,14 @@ export async function POST(request: NextRequest) {
     );
 
     if (result.error) {
-      return NextResponse.json({ error: result.error }, { status: 500 });
+      return NextResponse.json({ success: false, error: result.error });
     }
 
-    return NextResponse.json({ output: result.output });
+    return NextResponse.json({ success: true, output: result.output });
   } catch (error: any) {
     console.error('Execution error:', error);
     return NextResponse.json(
-      { error: error.message || 'An error occurred during code execution' },
+      { success: false, error: error.message || 'An error occurred during code execution' },
       { status: 500 }
     );
   }
