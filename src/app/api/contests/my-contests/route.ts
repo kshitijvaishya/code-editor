@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { contestDb } from '@/lib/contestDb';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    // Mock user ID (in production, get from auth session)
-    const userId = 'user123';
+    // Get authenticated user
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'Authentication required' },
+        { status: 401 }
+      );
+    }
 
     // Get all contests for the user
-    const contests = contestDb.getUserContests(userId);
+    const contests = await contestDb.getUserContests(user.userId);
 
     return NextResponse.json({
       success: true,

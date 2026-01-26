@@ -25,8 +25,11 @@ A CodeChef-style online code compiler built with Next.js and TypeScript that sup
 
 - **Node.js** (v18 or higher)
 - **npm** (comes with Node.js)
+- **MongoDB** (Local installation or MongoDB Atlas account)
 
-**No API key required!** This project uses the free **Piston API** for code execution, which works on any platform including Vercel, Netlify, etc.
+**Database:** This project uses MongoDB for storing contest data. See [MONGODB_SETUP.md](MONGODB_SETUP.md) for detailed setup instructions.
+
+**Code Execution:** Uses the free **Piston API** for code execution, which works on any platform including Vercel, Netlify, etc.
 
 ## Getting Started
 
@@ -35,7 +38,21 @@ A CodeChef-style online code compiler built with Next.js and TypeScript that sup
 npm install
 ```
 
-2. **Run the development server:**
+2. **Set up MongoDB:**
+   - For local development: Install MongoDB locally (see [MONGODB_SETUP.md](MONGODB_SETUP.md))
+   - For cloud: Create a free MongoDB Atlas cluster (see [MONGODB_SETUP.md](MONGODB_SETUP.md))
+
+3. **Configure environment variables:**
+   Create a `.env.local` file in the root directory:
+   ```env
+   MONGODB_URI=mongodb://localhost:27017/code-editor
+   ```
+   Or for MongoDB Atlas:
+   ```env
+   MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/code-editor
+   ```
+
+4. **Run the development server:**
 ```bash
 npm run dev
 ```
@@ -46,8 +63,11 @@ Navigate to [http://localhost:3000](http://localhost:3000)
 ## Deploy to Vercel
 
 1. Push your code to GitHub
-2. Import your repository in Vercel
-3. Deploy! 🚀 (No environment variables needed)
+2. Create a MongoDB Atlas cluster (free tier)
+3. Import your repository in Vercel
+4. Add environment variable in Vercel:
+   - `MONGODB_URI`: Your MongoDB connection string
+5. Deploy! 🚀
 
 ## Usage
 
@@ -64,16 +84,40 @@ complier/
 ├── src/
 │   ├── app/
 │   │   ├── api/
+│   │   │   ├── contests/            # Contest management APIs
+│   │   │   │   ├── create/
+│   │   │   │   ├── join/
+│   │   │   │   ├── my-contests/
+│   │   │   │   └── validate/
 │   │   │   └── execute/
-│   │   │       └── route.ts        # API route for code execution
-│   │   ├── globals.css             # Global styles
-│   │   ├── layout.tsx              # Root layout
-│   │   └── page.tsx                # Home page
-│   └── components/
-│       └── CodeEditor.tsx          # Main editor component
-├── temp/                           # Temporary files during execution
+│   │   │       └── route.ts         # API route for code execution
+│   │   ├── dashboard/               # User dashboard pages
+│   │   ├── editor/                  # Code editor page
+│   │   ├── globals.css              # Global styles
+│   │   ├── layout.tsx               # Root layout
+│   │   └── page.tsx                 # Home page
+│   ├── components/                  # React components
+│   │   ├── CodeEditor.tsx
+│   │   ├── ContestCard.tsx
+│   │   ├── CreateContestModal.tsx
+│   │   └── ...
+### Code Execution
+1. **Frontend**: Monaco Editor provides the code editing interface
+2. **API Route**: `/api/execute` sends code to Piston API
+3. **Piston**: Free, open-source code execution engine that compiles and runs code in isolated containers
+4. **Response**: Output is returned and displayed to the user
+
+### Contest System
+1. **Database**: MongoDB stores contest information, join codes, and participants
+2. **API Routes**: Handle contest creation, joining, and validation
+3. **Real-time Status**: Contest status updates automatically based on start/end times
+4. **Join Codes**: 8-character unique codes for private contest accesstions
+│       └── contest.ts               # Contest types and utilities
+├── temp/                            # Temporary files during execution
+├── .env.local                       # Environment variables (not in git)
 ├── .github/
-│   └── copilot-instructions.md    # Project documentation
+│   └── copilot-instructions.md     # Project documentation
+├── MONGODB_SETUP.md                # MongoDB setup guide
 ├── package.json
 ├── tsconfig.json
 └── README.md
@@ -87,10 +131,19 @@ complier/
 4. **Response**: Output is returned and displayed to the user
 
 **Benefits of Piston:**
-- ✅ Completely free and open-source
-- ✅ No API key required
-- ✅ Works on serverless platforms (Vercel, Netlify, etc.)
-- ✅ Secure containerized execution
+- ✅Technologies Used
+
+- **Frontend**: Next.js 14, React, TypeScript, TailwindCSS
+- **Editor**: Monaco Editor (VS Code's editor)
+- **Database**: MongoDB (local or Atlas)
+- **Code Execution**: Piston API
+- **Icons**: Lucide React
+
+## Security Notes
+
+✅ **Production Ready**: Piston provides secure containerized execution
+✅ **Database Security**: MongoDB connection secured via environment variables
+✅ **No Sensitive Data**: Contest system uses mock user authentication (implement real auth for production)
 - ✅ Supports 40+ programming languages
 - ✅ No rate limits (public instance)
 

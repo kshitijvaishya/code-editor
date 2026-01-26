@@ -1,16 +1,82 @@
 'use client';
 
-import { Mail, User, Shield, Calendar, Code2, Clock } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { Mail, User, Shield, Calendar, Code2, Clock, LogOut, Loader2 } from 'lucide-react';
+
+interface UserData {
+  id: string;
+  username: string;
+  email: string;
+  createdAt: string;
+}
 
 export default function Profile() {
-  const userData = {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    role: 'Developer',
-    joinDate: 'January 2024',
-    totalRuns: 142,
-    languages: ['Python', 'JavaScript', 'C++', 'Java', 'C'],
+  const router = useRouter();
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const fetchUserData = useCallback(async () => {
+    try {
+      const response = await fetch('/api/auth/me');
+      const data = await response.json();
+
+      if (data.success) {
+        setUserData(data.user);
+      } else {
+        router.push('/login');
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      router.push('/login');
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push('/');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    } finally {
+      setLoggingOut(false);
+    }
   };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-full bg-gray-950 p-8 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 text-purple-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!userData) {
+    return null;
+  }
+
+  const initials = userData.username
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <div className="min-h-full bg-gray-950 p-8">
@@ -32,12 +98,12 @@ export default function Profile() {
               <div className="flex items-end gap-4">
                 <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 border-4 border-gray-900 flex items-center justify-center shadow-2xl">
                   <span className="text-white font-bold text-4xl">
-                    {userData.name.split(' ').map(n => n[0]).join('')}
+                    {initials}
                   </span>
                 </div>
                 <div className="mb-4">
-                  <h2 className="text-3xl font-bold text-white">{userData.name}</h2>
-                  <p className="text-purple-400 font-medium">{userData.role}</p>
+                  <h2 className="text-3xl font-bold text-white">{userData.username}</h2>
+                  <p className="text-purple-400 font-medium">Developer</p>
                 </div>
               </div>
             </div>
@@ -63,7 +129,7 @@ export default function Profile() {
                   <Shield className="h-5 w-5 text-gray-400" />
                   <div>
                     <p className="text-xs text-gray-400 uppercase tracking-wide">Role</p>
-                    <p className="text-white font-medium">{userData.role}</p>
+                    <p className="text-white font-medium">Developer</p>
                   </div>
                 </div>
 
@@ -71,7 +137,7 @@ export default function Profile() {
                   <Calendar className="h-5 w-5 text-gray-400" />
                   <div>
                     <p className="text-xs text-gray-400 uppercase tracking-wide">Member Since</p>
-                    <p className="text-white font-medium">{userData.joinDate}</p>
+                    <p className="text-white font-medium">{formatDate(userData.createdAt)}</p>
                   </div>
                 </div>
               </div>
@@ -87,21 +153,16 @@ export default function Profile() {
                   <Clock className="h-5 w-5 text-gray-400" />
                   <div>
                     <p className="text-xs text-gray-400 uppercase tracking-wide">Total Code Runs</p>
-                    <p className="text-white font-medium text-2xl">{userData.totalRuns}</p>
+                    <p className="text-white font-medium text-2xl">0</p>
                   </div>
                 </div>
 
                 <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
                   <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Languages Used</p>
                   <div className="flex flex-wrap gap-2">
-                    {userData.languages.map((lang) => (
-                      <span
-                        key={lang}
-                        className="px-3 py-1 bg-purple-600/20 text-purple-300 border border-purple-500/30 rounded-full text-sm font-medium"
-                      >
-                        {lang}
-                      </span>
-                    ))}
+                    <span className="px-3 py-1 bg-gray-700/50 text-gray-400 border border-gray-600/30 rounded-full text-sm">
+                      Start coding to see stats
+                    </span>
                   </div>
                 </div>
               </div>
@@ -109,8 +170,22 @@ export default function Profile() {
 
             {/* Action Buttons */}
             <div className="mt-8 flex gap-4">
-              <button className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors">
-                Edit Profile
+              <button 
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+              >
+                {loggingOut ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Signing Out...
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="h-5 w-5" />
+                    Sign Out
+                  </>
+                )}
               </button>
               <button className="px-6 py-3 border border-gray-700 hover:bg-gray-800 text-white font-medium rounded-lg transition-colors">
                 Change Password
@@ -122,3 +197,4 @@ export default function Profile() {
     </div>
   );
 }
+

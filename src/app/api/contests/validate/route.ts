@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     const code = joinCode.trim().toUpperCase();
-    const contest = contestDb.getContestByJoinCode(code);
+    const contest = await contestDb.getContestByJoinCode(code);
 
     if (!contest) {
       return NextResponse.json(

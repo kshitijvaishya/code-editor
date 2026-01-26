@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { contestDb } from '@/lib/contestDb';
 import { JoinContestRequest } from '@/lib/contest';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,12 +25,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mock user data (in production, get from auth session)
-    const userId = 'user123';
-    const username = 'John Doe';
+    // Get authenticated user
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'Authentication required' },
+        { status: 401 }
+      );
+    }
 
     // Attempt to join contest
-    const result = contestDb.joinContest(code, userId, username);
+    const result = await contestDb.joinContest(code, user.userId, user.username);
 
     if (result.success) {
       return NextResponse.json({

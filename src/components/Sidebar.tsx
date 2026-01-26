@@ -1,7 +1,7 @@
 'use client';
 
 import { User, Code2, Trophy, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 type View = 'profile' | 'editor';
@@ -11,10 +11,42 @@ interface SidebarProps {
   onViewChange?: (view: View) => void;
 }
 
+interface UserData {
+  username: string;
+  email: string;
+}
+
 export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
   const [isContestsOpen, setIsContestsOpen] = useState(false);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const router = useRouter();
   const pathname = usePathname();
+
+  const fetchUserData = useCallback(async () => {
+    try {
+      const response = await fetch('/api/auth/me');
+      const data = await response.json();
+
+      if (data.success) {
+        setUserData(data.user);
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   const handleNavigation = (view: View) => {
     // If we're on the main dashboard page, use the callback
@@ -127,15 +159,25 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
 
       {/* User Info at Bottom */}
       <div className="p-4 border-t border-gray-800">
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">JD</span>
+        {userData ? (
+          <div className="flex items-center gap-3 px-2">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+              <span className="text-white font-bold text-sm">{getInitials(userData.username)}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">{userData.username}</p>
+              <p className="text-xs text-gray-400 truncate">{userData.email}</p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">John Doe</p>
-            <p className="text-xs text-gray-400 truncate">john@example.com</p>
+        ) : (
+          <div className="flex items-center gap-3 px-2">
+            <div className="w-10 h-10 rounded-full bg-gray-700 animate-pulse"></div>
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-gray-700 rounded animate-pulse"></div>
+              <div className="h-3 bg-gray-700 rounded w-2/3 animate-pulse"></div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </aside>
   );

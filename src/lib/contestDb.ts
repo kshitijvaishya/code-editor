@@ -1,19 +1,26 @@
 import { Contest, Participant, generateJoinCode, getContestStatus } from './contest';
+import { getDatabase } from './mongodb';
 
-// In-memory database (in production, use a real database)
+// MongoDB-based database
 class ContestDatabase {
-  private contests: Map<string, Contest> = new Map();
-  private joinCodeMap: Map<string, string> = new Map(); // joinCode -> contestId
   private rateLimit: Map<string, { attempts: number; lastAttempt: number }> = new Map();
 
-  createContest(name: string, startTime: string, endTime: string, creatorId: string): { contest: Contest; joinCode: string } {
+  private async getContestsCollection() {
+    const db = await getDatabase();
+    return db.collection<Contest>('contests');
+  }
+
+  async createContest(name: string, startTime: string, endTime: string, creatorId: string, creatorUsername: string): Promise<{ contest: Contest; joinCode: string }> {
     const contestId = `contest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     let joinCode: string;
+    const collection = await this.getContestsCollection();
     
     // Ensure unique join code
     do {
       joinCode = generateJoinCode();
-    } while (this.joinCodeMap.has(joinCode));
+      const existing = await collection.findOne({ joinCode });
+      if (!existing) break;
+    } while (true);
 
     const contest: Contest = {
       id: contestId,
@@ -26,22 +33,20 @@ class ContestDatabase {
       createdAt: new Date().toISOString(),
       participants: [{
         userId: creatorId,
-        username: 'Contest Creator',
+        username: creatorUsername,
         joinedAt: new Date().toISOString(),
       }],
     };
 
-    this.contests.set(contestId, contest);
-    this.joinCodeMap.set(joinCode, contestId);
+    await collection.insertOne(contest as any);
 
     return { contest, joinCode };
   }
 
-  getContestByJoinCode(joinCode: string): Contest | null {
-    const contestId = this.joinCodeMap.get(joinCode);
-    if (!contestId) return null;
+  async getContestByJoinCode(joinCode: string): Promise<Contest | null> {
+    const collection = await this.getContestsCollection();
+    const contest = await collection.findOne({ joinCode });
     
-    const contest = this.contests.get(contestId);
     if (!contest) return null;
 
     // Update status
@@ -49,8 +54,10 @@ class ContestDatabase {
     return contest;
   }
 
-  getContestById(contestId: string): Contest | null {
-    const contest = this.contests.get(contestId);
+  async getContestById(contestId: string): Promise<Contest | null> {
+    const collection = await this.getContestsCollection();
+    const contest = await collection.findOne({ id: contestId });
+    
     if (!contest) return null;
 
     // Update status
@@ -58,23 +65,24 @@ class ContestDatabase {
     return contest;
   }
 
-  getUserContests(userId: string): Contest[] {
-    const userContests: Contest[] = [];
+  async getUserContests(userId: string): Promise<Contest[]> {
+    const collection = await this.getContestsCollection();
+    const contests = await collection.find({
+      $or: [
+        { creatorId: userId },
+        { 'participants.userId': userId }
+      ]
+    }).toArray();
     
-    this.contests.forEach((contest) => {
-      // Update status
+    // Update status for each contest
+    contests.forEach(contest => {
       contest.status = getContestStatus(contest.startTime, contest.endTime);
-      
-      // Check if user is creator or participant
-      if (contest.creatorId === userId || contest.participants.some(p => p.userId === userId)) {
-        userContests.push(contest);
-      }
     });
 
-    return userContests.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return contests.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
-  joinContest(joinCode: string, userId: string, username: string): { success: boolean; message: string; contest?: Contest } {
+  async joinContest(joinCode: string, userId: string, username: string): Promise<{ success: boolean; message: string; contest?: Contest }> {
     // Rate limiting check
     const rateLimitKey = `${userId}_join`;
     const rateLimitData = this.rateLimit.get(rateLimitKey);
@@ -99,7 +107,7 @@ class ContestDatabase {
     }
 
     // Validate join code exists
-    const contest = this.getContestByJoinCode(joinCode);
+    const contest = await this.getContestByJoinCode(joinCode);
     if (!contest) {
       return { success: false, message: 'Invalid join code' };
     }
@@ -126,23 +134,26 @@ class ContestDatabase {
       joinedAt: new Date().toISOString(),
     };
 
+    const collection = await this.getContestsCollection();
+    await collection.updateOne(
+      { joinCode },
+      { $push: { participants: participant } }
+    );
+
     contest.participants.push(participant);
     
     return { success: true, message: 'Successfully joined contest', contest };
   }
 
   // Clean up expired join codes (for contests that have ended)
-  cleanupExpiredCodes(): void {
-    const expiredCodes: string[] = [];
+  async cleanupExpiredCodes(): Promise<void> {
+    const collection = await this.getContestsCollection();
+    const now = new Date();
     
-    this.joinCodeMap.forEach((contestId, joinCode) => {
-      const contest = this.contests.get(contestId);
-      if (contest && getContestStatus(contest.startTime, contest.endTime) === 'ended') {
-        expiredCodes.push(joinCode);
-      }
+    // Delete contests that have ended more than 30 days ago
+    await collection.deleteMany({
+      endTime: { $lt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString() }
     });
-    
-    expiredCodes.forEach(code => this.joinCodeMap.delete(code));
   }
 }
 
