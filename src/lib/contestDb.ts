@@ -38,6 +38,8 @@ class ContestDatabase {
         joinedAt: new Date().toISOString(),
         score: 0,
         problemsSolved: 0,
+        totalTestsPassed: 0,
+        totalExecutionTime: 0,
       }],
       problemIds: problemIds.length > 0 ? problemIds : [],
       submissions: [],
@@ -139,6 +141,8 @@ class ContestDatabase {
       joinedAt: new Date().toISOString(),
       score: 0,
       problemsSolved: 0,
+      totalTestsPassed: 0,
+      totalExecutionTime: 0,
     };
 
     const collection = await this.getContestsCollection();
@@ -187,27 +191,46 @@ class ContestDatabase {
       }
     );
 
-    // Update participant score if accepted
-    if (status === 'Accepted') {
-      const participant = contest.participants.find(p => p.userId === userId);
-      if (participant) {
-        // Check if this is a new problem solved
-        const existingAccepted = contest.submissions?.filter(
-          s => s.userId === userId && s.problemId === problemId && s.status === 'Accepted'
-        );
-        
-        const isFirstAccepted = !existingAccepted || existingAccepted.length === 0;
-        
-        await collection.updateOne(
-          { id: contestId, 'participants.userId': userId },
-          { 
-            $inc: { 
-              'participants.$.score': points,
-              'participants.$.problemsSolved': isFirstAccepted ? 1 : 0
-            }
+    // Update participant stats (partial credit for test cases passed)
+    const participant = contest.participants.find(p => p.userId === userId);
+    if (participant) {
+      // Check if this is user's best attempt for this problem
+      const previousSubmissions = contest.submissions?.filter(
+        s => s.userId === userId && s.problemId === problemId
+      ) || [];
+      
+      // Find best previous submission for this problem
+      const bestPrevious = previousSubmissions.reduce((best, curr) => {
+        if (!best) return curr;
+        if (curr.testsPassed > best.testsPassed) return curr;
+        if (curr.testsPassed === best.testsPassed && 
+            (curr.executionTime || 0) < (best.executionTime || 0)) return curr;
+        return best;
+      }, null as any);
+
+      // Calculate improvement in test cases passed
+      const prevTestsPassed = bestPrevious?.testsPassed || 0;
+      const testCaseImprovement = testsPassed - prevTestsPassed;
+      
+      // Calculate improvement in execution time (only if test cases improved or stayed same)
+      const prevExecutionTime = bestPrevious?.executionTime || 0;
+      const timeImprovement = testCaseImprovement >= 0 ? prevExecutionTime - executionTime : 0;
+
+      // Check if this is a newly solved problem (all test cases passed for first time)
+      const isNewlySolved = status === 'Accepted' && (!bestPrevious || bestPrevious.status !== 'Accepted');
+      
+      // Update participant stats
+      await collection.updateOne(
+        { id: contestId, 'participants.userId': userId },
+        { 
+          $inc: { 
+            'participants.$.score': points,
+            'participants.$.problemsSolved': isNewlySolved ? 1 : 0,
+            'participants.$.totalTestsPassed': testCaseImprovement,
+            'participants.$.totalExecutionTime': timeImprovement
           }
-        );
-      }
+        }
+      );
     }
 
     return { success: true, message: 'Submission recorded' };
@@ -228,11 +251,20 @@ class ContestDatabase {
     const contest = await this.getContestById(contestId);
     if (!contest) return [];
 
-    // Sort participants by score (descending), then by problems solved
+    // Sort participants by:
+    // 1. Total test cases passed (highest first) - PRIMARY
+    // 2. Total execution time (lowest first) - TIE-BREAKER
+    // 3. Problems solved (most first) - SECONDARY TIE-BREAKER
     return [...contest.participants].sort((a, b) => {
-      if ((b.score || 0) !== (a.score || 0)) {
-        return (b.score || 0) - (a.score || 0);
+      // Primary: Most test cases passed
+      if ((b.totalTestsPassed || 0) !== (a.totalTestsPassed || 0)) {
+        return (b.totalTestsPassed || 0) - (a.totalTestsPassed || 0);
       }
+      // Tie-breaker 1: Lowest execution time (faster is better)
+      if ((a.totalExecutionTime || 0) !== (b.totalExecutionTime || 0)) {
+        return (a.totalExecutionTime || 0) - (b.totalExecutionTime || 0);
+      }
+      // Tie-breaker 2: Most problems solved
       return (b.problemsSolved || 0) - (a.problemsSolved || 0);
     });
   }

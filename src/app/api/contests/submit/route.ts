@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { contestDb } from '@/lib/contestDb';
 import { getCurrentUser } from '@/lib/auth';
 import { getProblemById } from '@/lib/problems';
+import { runTestCases, filterHiddenTestResults } from '@/lib/testRunner';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,74 +70,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Execute code (reuse existing execute API)
-    const executeResponse = await fetch(`${request.nextUrl.origin}/api/execute`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        code,
-        language,
-        input: '', // Contest submissions use test cases from problem
-      }),
-    });
+    // Run code against all test cases
+    const executeApiUrl = `${request.nextUrl.origin}/api/execute`;
+    const executionResult = await runTestCases(
+      code,
+      language,
+      problem.testCases,
+      problem.timeLimit,
+      executeApiUrl
+    );
 
-    const executeResult = await executeResponse.json();
-
-    // For contest, we need to run against all test cases
-    // Simplified: assume we run test cases here
-    let testsPassed = 0;
-    let status = 'Wrong Answer';
-    let executionTime = 0;
-
-    if (executeResult.success && !executeResult.error) {
-      // In a real implementation, we'd run against all test cases
-      // For now, simulate based on execution success
-      const totalTests = problem.testCases.length;
-      
-      // Simple simulation: if code runs without error, pass some tests
-      testsPassed = Math.floor(Math.random() * (totalTests + 1));
-      
-      if (testsPassed === totalTests) {
-        status = 'Accepted';
-      } else if (executeResult.output && executeResult.output.includes('Error')) {
-        status = 'Runtime Error';
-      } else if (executeResult.executionTime && executeResult.executionTime > problem.timeLimit * 1000) {
-        status = 'Time Limit Exceeded';
-      }
-      
-      executionTime = executeResult.executionTime || 0;
-    } else if (executeResult.error) {
-      status = 'Compilation Error';
-    }
-
-    // Calculate points
-    const points = status === 'Accepted' ? problem.points : 0;
+    // Calculate points (only full points for Accepted)
+    const points = executionResult.status === 'Accepted' ? problem.points : 0;
 
     // Record submission
-    const result = await contestDb.submitSolution(
+    await contestDb.submitSolution(
       contestId,
       user.userId,
       user.username,
       problemId,
       code,
       language,
-      status,
-      testsPassed,
-      problem.testCases.length,
-      executionTime,
+      executionResult.status,
+      executionResult.passedTests,
+      executionResult.totalTests,
+      executionResult.totalExecutionTime,
       points
     );
+
+    // Filter hidden test cases before returning to user
+    const filteredTestResults = filterHiddenTestResults(executionResult.testResults);
 
     return NextResponse.json({
       success: true,
       submission: {
-        status,
-        testsPassed,
-        totalTests: problem.testCases.length,
-        executionTime,
+        status: executionResult.status,
+        testsPassed: executionResult.passedTests,
+        totalTests: executionResult.totalTests,
+        executionTime: executionResult.totalExecutionTime,
         points,
+        testResults: filteredTestResults, // Include test case details
       },
     });
   } catch (error) {

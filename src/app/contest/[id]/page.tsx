@@ -561,6 +561,10 @@ export default function ContestPage() {
                     <span className="text-red-400 font-bold">🚫</span>
                     <span><strong className="text-white">No Exits Allowed:</strong> Exiting fullscreen will terminate your contest immediately</span>
                   </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-blue-400 font-bold">📋</span>
+                    <span><strong className="text-white">Copy/Paste Disabled:</strong> Copy-paste operations are disabled for security but won&apos;t terminate the contest</span>
+                  </li>
                 </ul>
               </div>
 
@@ -977,13 +981,11 @@ export default function ContestPage() {
                             onDragStart={(e) => e.preventDefault()}
                             onDrop={(e) => e.preventDefault()}
                             onKeyDown={(e) => {
-                              // Prevent Ctrl+C, Ctrl+V, Ctrl+X
+                              // Silently prevent Ctrl+C, Ctrl+V, Ctrl+X without any alerts
                               if (e.ctrlKey || e.metaKey) {
-                                if (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'a') {
-                                  if (e.key !== 'a') { // Allow Ctrl+A for select all
-                                    e.preventDefault();
-                                    alert('Copy/Paste operations are disabled during the contest for security reasons.');
-                                  }
+                                if (e.key === 'c' || e.key === 'v' || e.key === 'x') {
+                                  e.preventDefault();
+                                  e.stopPropagation();
                                 }
                               }
                             }}
@@ -1060,7 +1062,8 @@ export default function ContestPage() {
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Rank</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Username</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Score</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Test Cases</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Time (ms)</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Solved</th>
                       </tr>
                     </thead>
@@ -1074,14 +1077,17 @@ export default function ContestPage() {
                               index === 2 ? 'text-orange-400' :
                               'text-gray-400'
                             }`}>
-                              #{index + 1}
+                              {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : ''} #{index + 1}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-white font-medium">
                             {participant.username}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-purple-400 font-semibold">
-                            {participant.score || 0}
+                          <td className="px-6 py-4 whitespace-nowrap text-green-400 font-semibold">
+                            {participant.totalTestsPassed || 0}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-blue-400 font-mono text-sm">
+                            {(participant.totalExecutionTime || 0).toFixed(0)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-gray-400">
                             {participant.problemsSolved || 0}/{problems.length}
@@ -1096,6 +1102,25 @@ export default function ContestPage() {
                       No submissions yet
                     </div>
                   )}
+                </div>
+
+                {/* Ranking Explanation */}
+                <div className="mt-6 bg-gray-800/30 border border-gray-700 rounded-xl p-6">
+                  <h3 className="text-lg font-bold text-white mb-3">🏆 How Rankings Work</h3>
+                  <ul className="space-y-2 text-gray-300 text-sm">
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-400">1.</span>
+                      <span><strong className="text-white">Test Cases Passed:</strong> More test cases = Higher rank (partial credit awarded)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400">2.</span>
+                      <span><strong className="text-white">Execution Time:</strong> If tied on test cases, faster solutions rank higher</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-400">3.</span>
+                      <span><strong className="text-white">Problems Solved:</strong> If still tied, more fully solved problems rank higher</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>

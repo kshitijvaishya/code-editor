@@ -23,6 +23,8 @@ export interface Participant {
   joinedAt: string;
   score?: number;
   problemsSolved?: number;
+  totalTestsPassed?: number;  // Total test cases passed across all problems
+  totalExecutionTime?: number; // Total execution time in milliseconds
 }
 
 export interface ContestSubmission {

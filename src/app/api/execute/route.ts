@@ -25,8 +25,10 @@ async function executeCodeWithPiston(
   version: string,
   code: string,
   input: string
-): Promise<{ output?: string; error?: string }> {
+): Promise<{ output?: string; error?: string; executionTime?: number }> {
   try {
+    const startTime = Date.now();
+    
     const response = await fetch(`${PISTON_API}/execute`, {
       method: 'POST',
       headers: {
@@ -45,6 +47,9 @@ async function executeCodeWithPiston(
       }),
     });
 
+    const endTime = Date.now();
+    const executionTime = endTime - startTime;
+
     if (!response.ok) {
       throw new Error(`Piston API error: ${response.statusText}`);
     }
@@ -56,10 +61,13 @@ async function executeCodeWithPiston(
     const error = result.run.stderr || '';
 
     if (error) {
-      return { error };
+      return { error, executionTime };
     }
 
-    return { output: output || 'Program executed successfully with no output.' };
+    return { 
+      output: output || 'Program executed successfully with no output.',
+      executionTime 
+    };
   } catch (error: any) {
     return { error: error.message || 'Failed to execute code' };
   }
@@ -93,10 +101,18 @@ export async function POST(request: NextRequest) {
     );
 
     if (result.error) {
-      return NextResponse.json({ success: false, error: result.error });
+      return NextResponse.json({ 
+        success: false, 
+        error: result.error,
+        executionTime: result.executionTime 
+      });
     }
 
-    return NextResponse.json({ success: true, output: result.output });
+    return NextResponse.json({ 
+      success: true, 
+      output: result.output,
+      executionTime: result.executionTime 
+    });
   } catch (error: any) {
     console.error('Execution error:', error);
     return NextResponse.json(
