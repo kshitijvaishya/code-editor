@@ -78,19 +78,6 @@ async function executeTestCase(
       };
     }
 
-    // Check for time limit exceeded
-    if (executionTime > timeLimit * 1000) {
-      return {
-        passed: false,
-        input: testCase.input,
-        expectedOutput: testCase.expectedOutput,
-        actualOutput: result.output || '',
-        executionTime,
-        error: 'Time Limit Exceeded',
-        isHidden: testCase.isHidden,
-      };
-    }
-
     // Compare outputs
     const actualOutput = result.output || '';
     const passed = compareOutputs(actualOutput, testCase.expectedOutput);

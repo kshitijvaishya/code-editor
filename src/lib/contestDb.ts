@@ -43,6 +43,7 @@ class ContestDatabase {
       }],
       problemIds: problemIds.length > 0 ? problemIds : [],
       submissions: [],
+      resultsPublished: false,
     };
 
     await collection.insertOne(contest as any);
@@ -284,6 +285,30 @@ class ContestDatabase {
     const collection = await this.getContestsCollection();
     const result = await collection.deleteOne({ id: contestId });
     return result.deletedCount > 0;
+  }
+
+  async publishResults(contestId: string, creatorId: string): Promise<{ success: boolean; message: string }> {
+    const collection = await this.getContestsCollection();
+    const contest = await this.getContestById(contestId);
+
+    if (!contest) {
+      return { success: false, message: 'Contest not found' };
+    }
+
+    if (contest.creatorId !== creatorId) {
+      return { success: false, message: 'Only contest creator can publish results' };
+    }
+
+    if (contest.status !== 'ended') {
+      return { success: false, message: 'Can only publish results after contest ends' };
+    }
+
+    await collection.updateOne(
+      { id: contestId },
+      { $set: { resultsPublished: true } }
+    );
+
+    return { success: true, message: 'Results published successfully' };
   }
 }
 

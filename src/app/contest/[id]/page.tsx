@@ -42,6 +42,10 @@ export default function ContestPage() {
   const [customInput, setCustomInput] = useState('');
   const [output, setOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
+  // Track submitted problems and their test results
+  const [submittedProblems, setSubmittedProblems] = useState<Set<string>>(new Set());
+  const [problemTestResults, setProblemTestResults] = useState<{[problemId: string]: any}>({});
+
 
   useEffect(() => {
     loadCurrentUser();
@@ -201,6 +205,12 @@ export default function ContestPage() {
   const handleSubmit = async () => {
     if (!selectedProblem || !contest) return;
 
+    // Check if already submitted for this problem
+    if (submittedProblems.has(selectedProblem.id)) {
+      alert('You have already submitted a solution for this problem. Only one submission is allowed per problem in contests.');
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitResult(null);
 
@@ -219,7 +229,16 @@ export default function ContestPage() {
       const data = await response.json();
 
       if (data.success) {
+        // Show test results immediately (no redirect)
         setSubmitResult(data.submission);
+        
+        // Mark problem as submitted
+        setSubmittedProblems(prev => {
+          const newSet = new Set(Array.from(prev));
+          newSet.add(selectedProblem.id);
+          return newSet;
+        });
+        
         loadContestData(); // Refresh data
       } else {
         setSubmitResult({ status: 'Error', message: data.message });
@@ -260,6 +279,17 @@ export default function ContestPage() {
     } finally {
       setIsRunning(false);
     }
+  };
+
+  const handleProblemSelect = (problem: Problem) => {
+    // If switching to a different problem, clear the code editor and submit result
+    if (selectedProblem && selectedProblem.id !== problem.id) {
+      setCode('');
+      setSubmitResult(null);
+      setOutput('');
+      setCustomInput('');
+    }
+    setSelectedProblem(problem);
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -335,9 +365,6 @@ export default function ContestPage() {
 
     // Reload contest data to show updated results
     await loadContestData();
-    
-    // Switch to leaderboard tab to show results
-    setActiveTab('leaderboard');
     
     // Show alert about termination
     alert(`Contest terminated!\n\n${reason}\n\nYour submission has been recorded. Check the leaderboard for your rank.`);
@@ -501,16 +528,19 @@ export default function ContestPage() {
                   >
                     Problems
                   </button>
-                  <button
-                    onClick={() => setActiveTab('leaderboard')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      activeTab === 'leaderboard'
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                    }`}
-                  >
-                    Leaderboard
-                  </button>
+                  {/* Show leaderboard only if results are published */}
+                  {contest?.resultsPublished && (
+                    <button
+                      onClick={() => setActiveTab('leaderboard')}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        activeTab === 'leaderboard'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                      }`}
+                    >
+                      Leaderboard
+                    </button>
+                  )}
                 </div>
 
                 {/* Warning: Fullscreen Lock Indicator */}
@@ -780,7 +810,7 @@ export default function ContestPage() {
                       {problems.map((problem, index) => (
                         <button
                           key={problem.id}
-                          onClick={() => setSelectedProblem(problem)}
+                          onClick={() => handleProblemSelect(problem)}
                           className={`w-full text-left p-3 rounded-lg transition-all ${
                             selectedProblem?.id === problem.id
                               ? 'bg-purple-600 text-white'
@@ -789,9 +819,14 @@ export default function ContestPage() {
                         >
                           <div className="flex items-center justify-between mb-1">
                             <span className="font-mono text-xs font-semibold">Problem {index + 1}</span>
-                            {isProblemSolved(problem.id) && (
-                              <CheckCircle2 className="h-4 w-4 text-green-400" />
-                            )}
+                            <div className="flex items-center gap-1">
+                              {submittedProblems.has(problem.id) && (
+                                <CheckCircle2 className="h-4 w-4 text-blue-400" />
+                              )}
+                              {isProblemSolved(problem.id) && (
+                                <CheckCircle2 className="h-4 w-4 text-green-400" />
+                              )}
+                            </div>
                           </div>
                           <div className="text-sm font-medium mb-1">{problem.title}</div>
                           <div className="flex items-center gap-2 text-xs">
@@ -844,6 +879,8 @@ export default function ContestPage() {
                             <span className="text-gray-400">Time: {selectedProblem.timeLimit}s</span>
                             <span className="text-gray-400">•</span>
                             <span className="text-gray-400">Memory: {selectedProblem.memoryLimit}MB</span>
+                            <span className="text-gray-400">•</span>
+                            <span className="text-blue-400 font-medium">{selectedProblem.testCases.length} Test Cases</span>
                           </div>
 
                           <div className="prose prose-invert max-w-none">
@@ -932,38 +969,95 @@ export default function ContestPage() {
                           </button>
                           <button
                             onClick={handleSubmit}
-                            disabled={isSubmitting || !code.trim() || contest.status !== 'live'}
+                            disabled={isSubmitting || !code.trim() || contest.status !== 'live' || (selectedProblem && submittedProblems.has(selectedProblem.id))}
                             className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-semibold rounded-lg transition-all flex items-center gap-2"
                           >
                             <CheckCircle2 className="h-4 w-4" />
-                            {isSubmitting ? 'Submitting...' : 'Submit'}
+                            {selectedProblem && submittedProblems.has(selectedProblem.id) ? 'Submitted' : (isSubmitting ? 'Submitting...' : 'Submit')}
                           </button>
                         </div>
                       </div>
 
                       {/* Submission Result */}
                       {submitResult && (
-                        <div className={`px-4 py-3 border-b ${
+                        <div className={`border-b ${
                           submitResult.status === 'Accepted'
                             ? 'bg-green-500/10 border-green-500/30'
-                            : 'bg-red-500/10 border-red-500/30'
+                            : submitResult.status === 'Error'
+                            ? 'bg-red-500/10 border-red-500/30'
+                            : 'bg-yellow-500/10 border-yellow-500/30'
                         }`}>
-                          <div className="flex items-center gap-3">
-                            {getStatusIcon(submitResult.status)}
-                            <div className="flex-1">
-                              <p className={`font-semibold ${
-                                submitResult.status === 'Accepted' ? 'text-green-400' : 'text-red-400'
-                              }`}>
-                                {submitResult.status}
-                              </p>
-                              {submitResult.testsPassed !== undefined && (
-                                <p className="text-sm text-gray-400">
-                                  Test Cases: {submitResult.testsPassed}/{submitResult.totalTests} passed
-                                  {submitResult.points > 0 && ` • +${submitResult.points} points earned`}
-                                </p>
+                          <div className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              {submitResult.status === 'Accepted' ? (
+                                <CheckCircle2 className="h-5 w-5 text-green-400" />
+                              ) : submitResult.status === 'Error' ? (
+                                <XCircle className="h-5 w-5 text-red-400" />
+                              ) : (
+                                <AlertCircle className="h-5 w-5 text-yellow-400" />
                               )}
+                              <div className="flex-1">
+                                <p className={`font-semibold ${
+                                  submitResult.status === 'Accepted' ? 'text-green-400' :
+                                  submitResult.status === 'Error' ? 'text-red-400' :
+                                  'text-yellow-400'
+                                }`}>
+                                  {submitResult.status}
+                                </p>
+                                {submitResult.testsPassed !== undefined && (
+                                  <div className="mt-2 space-y-1">
+                                    <p className="text-sm text-gray-300">
+                                      <span className="font-semibold">Test Cases: </span>
+                                      <span className={submitResult.testsPassed === submitResult.totalTests ? 'text-green-400' : 'text-yellow-400'}>
+                                        {submitResult.testsPassed}/{submitResult.totalTests} Passed
+                                      </span>
+                                    </p>
+                                    {submitResult.points !== undefined && (
+                                      <p className="text-sm text-gray-300">
+                                        <span className="font-semibold">Points Earned: </span>
+                                        <span className="text-blue-400">+{submitResult.points}</span>
+                                      </p>
+                                    )}
+                                    {submitResult.executionTime !== undefined && (
+                                      <p className="text-sm text-gray-300">
+                                        <span className="font-semibold">Execution Time: </span>
+                                        <span className="text-purple-400">{submitResult.executionTime.toFixed(2)}ms</span>
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                                {submitResult.message && (
+                                  <p className="text-sm text-gray-400 mt-1">
+                                    {submitResult.message}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </div>
+                          
+                          {/* Individual Test Case Results (Pass/Fail only) */}
+                          {submitResult.testResults && submitResult.testResults.length > 0 && (
+                            <div className="px-4 py-3 border-t border-gray-700/50 max-h-40 overflow-y-auto">
+                              <p className="text-xs font-semibold text-gray-400 uppercase mb-2">Test Case Details:</p>
+                              <div className="space-y-1.5">
+                                {submitResult.testResults.map((testResult: any, index: number) => (
+                                  <div 
+                                    key={index}
+                                    className="flex items-center gap-2 text-sm"
+                                  >
+                                    {testResult.passed ? (
+                                      <CheckCircle2 className="h-4 w-4 text-green-400 flex-shrink-0" />
+                                    ) : (
+                                      <XCircle className="h-4 w-4 text-red-400 flex-shrink-0" />
+                                    )}
+                                    <span className={testResult.passed ? 'text-green-400' : 'text-red-400'}>
+                                      Test Case {index + 1}: {testResult.passed ? 'Passed' : 'Failed'}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -974,21 +1068,6 @@ export default function ContestPage() {
                           <textarea
                             value={code}
                             onChange={(e) => setCode(e.target.value)}
-                            onCopy={(e) => e.preventDefault()}
-                            onCut={(e) => e.preventDefault()}
-                            onPaste={(e) => e.preventDefault()}
-                            onContextMenu={(e) => e.preventDefault()}
-                            onDragStart={(e) => e.preventDefault()}
-                            onDrop={(e) => e.preventDefault()}
-                            onKeyDown={(e) => {
-                              // Silently prevent Ctrl+C, Ctrl+V, Ctrl+X without any alerts
-                              if (e.ctrlKey || e.metaKey) {
-                                if (e.key === 'c' || e.key === 'v' || e.key === 'x') {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                }
-                              }
-                            }}
                             className="w-full h-full p-4 bg-gray-950 text-white font-mono text-sm resize-none focus:outline-none"
                             placeholder="// Write your code here..."
                             spellCheck={false}
@@ -1056,72 +1135,88 @@ export default function ContestPage() {
                   <h2 className="text-2xl font-bold text-white">Leaderboard</h2>
                 </div>
 
-                <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-gray-800">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Rank</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Username</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Test Cases</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Time (ms)</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Solved</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-800">
-                      {leaderboard.map((participant, index) => (
-                        <tr key={participant.userId} className={index < 3 ? 'bg-gray-800/50' : ''}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`font-bold ${
-                              index === 0 ? 'text-yellow-400' :
-                              index === 1 ? 'text-gray-300' :
-                              index === 2 ? 'text-orange-400' :
-                              'text-gray-400'
-                            }`}>
-                              {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : ''} #{index + 1}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-white font-medium">
-                            {participant.username}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-green-400 font-semibold">
-                            {participant.totalTestsPassed || 0}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-blue-400 font-mono text-sm">
-                            {(participant.totalExecutionTime || 0).toFixed(0)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-gray-400">
-                            {participant.problemsSolved || 0}/{problems.length}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                {/* Show results only if published */}
+                {!contest?.resultsPublished ? (
+                  <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
+                    <AlertCircle className="h-16 w-16 text-yellow-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-white mb-2">Results Pending</h3>
+                    <p className="text-gray-400 mb-4">
+                      The contest has ended. Results will be published by the moderator after reviewing all submissions.
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Check back later to see your ranking and scores.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                      <table className="w-full">
+                        <thead className="bg-gray-800">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Rank</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Username</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Test Cases</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Time (ms)</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Solved</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-800">
+                          {leaderboard.map((participant, index) => (
+                            <tr key={participant.userId} className={index < 3 ? 'bg-gray-800/50' : ''}>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`font-bold ${
+                                  index === 0 ? 'text-yellow-400' :
+                                  index === 1 ? 'text-gray-300' :
+                                  index === 2 ? 'text-orange-400' :
+                                  'text-gray-400'
+                                }`}>
+                                  {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : ''} #{index + 1}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-white font-medium">
+                                {participant.username}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-green-400 font-semibold">
+                                {participant.totalTestsPassed || 0}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-blue-400 font-mono text-sm">
+                                {(participant.totalExecutionTime || 0).toFixed(0)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-gray-400">
+                                {participant.problemsSolved || 0}/{problems.length}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
 
-                  {leaderboard.length === 0 && (
-                    <div className="text-center py-12 text-gray-400">
-                      No submissions yet
+                      {leaderboard.length === 0 && (
+                        <div className="text-center py-12 text-gray-400">
+                          No submissions yet
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                {/* Ranking Explanation */}
-                <div className="mt-6 bg-gray-800/30 border border-gray-700 rounded-xl p-6">
-                  <h3 className="text-lg font-bold text-white mb-3">🏆 How Rankings Work</h3>
-                  <ul className="space-y-2 text-gray-300 text-sm">
-                    <li className="flex items-start gap-2">
-                      <span className="text-green-400">1.</span>
-                      <span><strong className="text-white">Test Cases Passed:</strong> More test cases = Higher rank (partial credit awarded)</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-400">2.</span>
-                      <span><strong className="text-white">Execution Time:</strong> If tied on test cases, faster solutions rank higher</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-purple-400">3.</span>
-                      <span><strong className="text-white">Problems Solved:</strong> If still tied, more fully solved problems rank higher</span>
-                    </li>
-                  </ul>
-                </div>
+                    {/* Ranking Explanation */}
+                    <div className="mt-6 bg-gray-800/30 border border-gray-700 rounded-xl p-6">
+                      <h3 className="text-lg font-bold text-white mb-3">🏆 How Rankings Work</h3>
+                      <ul className="space-y-2 text-gray-300 text-sm">
+                        <li className="flex items-start gap-2">
+                          <span className="text-green-400">1.</span>
+                          <span><strong className="text-white">Test Cases Passed:</strong> More test cases = Higher rank (partial credit awarded)</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-blue-400">2.</span>
+                          <span><strong className="text-white">Execution Time:</strong> If tied on test cases, faster solutions rank higher</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-purple-400">3.</span>
+                          <span><strong className="text-white">Problems Solved:</strong> If still tied, more fully solved problems rank higher</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
             )}

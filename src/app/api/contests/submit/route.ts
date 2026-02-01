@@ -80,8 +80,11 @@ export async function POST(request: NextRequest) {
       executeApiUrl
     );
 
-    // Calculate points (only full points for Accepted)
-    const points = executionResult.status === 'Accepted' ? problem.points : 0;
+    // Calculate partial points based on test cases passed
+    const percentagePassed = executionResult.totalTests > 0 
+      ? executionResult.passedTests / executionResult.totalTests 
+      : 0;
+    const points = Math.round(problem.points * percentagePassed);
 
     // Record submission
     await contestDb.submitSolution(

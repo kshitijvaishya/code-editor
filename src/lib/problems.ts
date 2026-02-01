@@ -127,9 +127,10 @@ A valid credit card from ABCD Bank has the following characteristics:
       }
     ],
     testCases: [
-      { input: '6\n4123456789123456\n5123-4567-8912-3456\n61234-567-8912-3456\n4123356789123456\n5133-3367-8912-3456\n5123 - 3567 - 8912 - 3456', expectedOutput: 'Valid\nValid\nInvalid\nValid\nInvalid\nInvalid' },
-      { input: '3\n4253625879615786\n4424424424442444\n5122-2368-7954-3214', expectedOutput: 'Valid\nValid\nValid' },
-      { input: '5\n42536258796157867\n4424444424442444\n5122-2368-7954 - 3214\n44244x4424442444\n0525362587961578', expectedOutput: 'Invalid\nInvalid\nInvalid\nInvalid\nInvalid', isHidden: true }
+      { input: '5\n7165863385679329\n6175824393389297\n5252248277877418\n9563584181869815\n5179123424576876', expectedOutput: 'Invalid\nValid\nValid\nInvalid\nValid', isHidden: true },
+      { input: '6\n3695-7963-915827-75\n3143-4672-8798-2968-2968\n6444-4444-4444-4918\n6865396515642918\n6865396515642\n4695-7963-9778-2775', expectedOutput: 'Invalid\nInvalid\nInvalid\nValid\nInvalid\nValid', isHidden: true },
+      { input: '5\n7165863385679329\n6175824393389297\n5252248277877418\n9563584181869815\n5179123424576876', expectedOutput: 'Invalid\nValid\nValid\nInvalid\nValid', isHidden: true },
+      { input: '4\n3695-7963-  5827-75\n4143-4672-8798-2968-2968\n6865---------------3965---------------1564-------------2918\n6865396515642918', expectedOutput: 'Invalid\nInvalid\nInvalid\nValid', isHidden: true }
     ],
     timeLimit: 2,
     memoryLimit: 256,

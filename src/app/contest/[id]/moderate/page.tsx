@@ -51,6 +51,7 @@ interface Contest {
   startTime: string;
   endTime: string;
   status: string;
+  resultsPublished?: boolean;
 }
 
 interface ModerationData {
@@ -73,6 +74,7 @@ export default function ModerationPage() {
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [expandedParticipants, setExpandedParticipants] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'participants' | 'problems'>('participants');
+  const [isPublishing, setIsPublishing] = useState(false);
 
   useEffect(() => {
     loadModerationData();
@@ -123,6 +125,35 @@ export default function ModerationPage() {
 
   const closeSubmissionViewer = () => {
     setSelectedSubmission(null);
+  };
+
+  const handlePublishResults = async () => {
+    if (!confirm('Are you sure you want to publish the results? Participants will be able to see their scores and the leaderboard.')) {
+      return;
+    }
+
+    setIsPublishing(true);
+    try {
+      const response = await fetch('/api/contests/publish-results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contestId }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('Results published successfully! Participants can now view the leaderboard.');
+        loadModerationData(); // Refresh data
+      } else {
+        alert(result.message || 'Failed to publish results');
+      }
+    } catch (error) {
+      alert('An error occurred while publishing results');
+      console.error(error);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -233,6 +264,23 @@ export default function ModerationPage() {
                 <div className="text-sm text-green-600 font-medium">Participants</div>
                 <div className="text-2xl font-bold text-green-900">{data.participants.length}</div>
               </div>
+              {/* Publish Results Button */}
+              {data.contest.status === 'ended' && !data.contest.resultsPublished && (
+                <button
+                  onClick={handlePublishResults}
+                  disabled={isPublishing}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium shadow-lg transition-all flex items-center gap-2"
+                >
+                  <Trophy className="w-5 h-5" />
+                  {isPublishing ? 'Publishing...' : 'Publish Results'}
+                </button>
+              )}
+              {data.contest.resultsPublished && (
+                <div className="bg-green-50 border border-green-200 px-4 py-2 rounded-lg flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  <span className="text-green-700 font-medium">Results Published</span>
+                </div>
+              )}
             </div>
           </div>
 

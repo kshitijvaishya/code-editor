@@ -15,6 +15,7 @@ export interface Contest {
   participantLimit?: number;
   problemIds: string[]; // IDs of problems in this contest
   submissions?: ContestSubmission[];
+  resultsPublished?: boolean; // Whether results are visible to participants
 }
 
 export interface Participant {
