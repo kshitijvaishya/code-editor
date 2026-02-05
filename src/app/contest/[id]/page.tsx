@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { Contest } from '@/lib/contest';
@@ -45,6 +45,10 @@ export default function ContestPage() {
   // Track submitted problems and their test results
   const [submittedProblems, setSubmittedProblems] = useState<Set<string>>(new Set());
   const [problemTestResults, setProblemTestResults] = useState<{[problemId: string]: any}>({});
+  // Flag to prevent violation detection during legitimate submissions
+  const [isSubmittingLegit, setIsSubmittingLegit] = useState(false);
+  // Ref for debouncing violation detection (only for tab visibility)
+  const violationTimeoutRef = useRef<{visibilityTimeout?: NodeJS.Timeout}>({});
 
 
   useEffect(() => {
@@ -118,23 +122,55 @@ export default function ContestPage() {
     if (!hasStarted || !contest) return;
 
     const handleVisibilityChange = () => {
-      if (document.hidden && hasStarted) {
-        handleViolation('Tab switching detected');
+      // Don't trigger violation during legitimate submission
+      if (document.hidden && hasStarted && !isSubmittingLegit) {
+        // Clear any existing timeout
+        if (violationTimeoutRef.current.visibilityTimeout) {
+          clearTimeout(violationTimeoutRef.current.visibilityTimeout);
+        }
+        // Debounce: wait 1 second before triggering violation
+        violationTimeoutRef.current.visibilityTimeout = setTimeout(() => {
+          if (document.hidden && hasStarted && !isSubmittingLegit) {
+            handleViolation('Tab switching detected');
+          }
+        }, 1000);
+      } else {
+        // User returned to tab, cancel violation
+        if (violationTimeoutRef.current.visibilityTimeout) {
+          clearTimeout(violationTimeoutRef.current.visibilityTimeout);
+        }
       }
     };
 
     const handleFullscreenChange = () => {
-      if (!document.fullscreenElement && hasStarted) {
-        handleViolation('Exited fullscreen mode');
+      // Check multiple fullscreen properties for browser compatibility
+      const isFullscreen = document.fullscreenElement || 
+                          (document as any).webkitFullscreenElement || 
+                          (document as any).mozFullScreenElement || 
+                          (document as any).msFullscreenElement;
+      
+      // IMMEDIATE DISQUALIFICATION - No warnings, instant contest termination
+      if (!isFullscreen && hasStarted) {
+        handleAutoSubmit('Exited fullscreen mode - Contest terminated immediately');
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange); // Safari
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange); // Firefox
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange); // IE11
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+      // Clear timeouts on cleanup
+      if (violationTimeoutRef.current.visibilityTimeout) {
+        clearTimeout(violationTimeoutRef.current.visibilityTimeout);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasStarted, contest]);
@@ -176,7 +212,6 @@ export default function ContestPage() {
             // User already completed - allow viewing results but not re-entry
             // Don't redirect, just prevent starting again
             setShowInstructions(false);
-            setActiveTab('leaderboard');
           } else if (contestData.status === 'live') {
             // User started but abandoned and contest is still live - prevent re-entry
             alert('You already started this contest!\n\nFor security reasons, you cannot re-enter. View your results on the dashboard.');
@@ -211,6 +246,8 @@ export default function ContestPage() {
       return;
     }
 
+    // Set flag to prevent violation detection during submission
+    setIsSubmittingLegit(true);
     setIsSubmitting(true);
     setSubmitResult(null);
 
@@ -233,13 +270,49 @@ export default function ContestPage() {
         setSubmitResult(data.submission);
         
         // Mark problem as submitted
+        const currentProblemId = selectedProblem.id;
         setSubmittedProblems(prev => {
           const newSet = new Set(Array.from(prev));
-          newSet.add(selectedProblem.id);
+          newSet.add(currentProblemId);
           return newSet;
         });
         
-        loadContestData(); // Refresh data
+        await loadContestData(); // Refresh data
+        
+        // Check if all problems have been submitted
+        const newSubmittedSet = new Set(Array.from(submittedProblems));
+        newSubmittedSet.add(currentProblemId);
+        const allProblemsSubmitted = problems.every(p => newSubmittedSet.has(p.id));
+        
+        if (allProblemsSubmitted) {
+          // All problems completed - exit fullscreen and redirect to dashboard
+          setTimeout(async () => {
+            if (document.fullscreenElement) {
+              try {
+                await document.exitFullscreen();
+              } catch (error) {
+                console.error('Failed to exit fullscreen:', error);
+              }
+            }
+            alert('🎉 Congratulations! You have submitted all problems!\n\nYou will be redirected to the dashboard.');
+            router.push('/dashboard/contests/private');
+          }, 2000);
+        } else {
+          // Auto-navigate to next unsolved problem after 2 seconds
+          setTimeout(() => {
+            const currentIndex = problems.findIndex(p => p.id === currentProblemId);
+            const nextProblem = problems.find((p, idx) => idx > currentIndex && !newSubmittedSet.has(p.id));
+            
+            if (nextProblem) {
+              // Clear code editor and navigate to next problem
+              setCode('');
+              setSubmitResult(null);
+              setOutput('');
+              setCustomInput('');
+              setSelectedProblem(nextProblem);
+            }
+          }, 2000);
+        }
       } else {
         setSubmitResult({ status: 'Error', message: data.message });
       }
@@ -247,6 +320,8 @@ export default function ContestPage() {
       setSubmitResult({ status: 'Error', message: 'Failed to submit solution' });
     } finally {
       setIsSubmitting(false);
+      // Re-enable violation detection after submission completes
+      setTimeout(() => setIsSubmittingLegit(false), 3000);
     }
   };
 
@@ -321,9 +396,12 @@ export default function ContestPage() {
     const newWarningCount = warningCount + 1;
     setWarningCount(newWarningCount);
 
-    if (newWarningCount >= 1) {
-      // Auto-submit on first violation
+    if (newWarningCount >= 3) {
+      // Auto-submit after 3 violations
       handleAutoSubmit(reason);
+    } else {
+      // Show warning alert
+      alert(`Warning ${newWarningCount}/3: ${reason}\n\nYou have ${3 - newWarningCount} warning(s) remaining before the contest is auto-submitted.`);
     }
   };
 
@@ -373,11 +451,24 @@ export default function ContestPage() {
   const enterFullscreen = async () => {
     try {
       const elem = document.documentElement;
+      // Try different fullscreen APIs for browser compatibility
       if (elem.requestFullscreen) {
         await elem.requestFullscreen();
+      } else if ((elem as any).webkitRequestFullscreen) {
+        // Safari
+        await (elem as any).webkitRequestFullscreen();
+      } else if ((elem as any).msRequestFullscreen) {
+        // IE11
+        await (elem as any).msRequestFullscreen();
+      } else if ((elem as any).mozRequestFullScreen) {
+        // Firefox
+        await (elem as any).mozRequestFullScreen();
+      } else {
+        console.warn('Fullscreen API is not supported by this browser');
       }
     } catch (error) {
       console.error('Failed to enter fullscreen:', error);
+      // Continue anyway - fullscreen is encouraged but not required
     }
   };
 
