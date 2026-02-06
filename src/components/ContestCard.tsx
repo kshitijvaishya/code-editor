@@ -1,7 +1,7 @@
 'use client';
 
 import { Contest } from '@/lib/contest';
-import { Calendar, Clock, Users, Copy, Check, Code2, Medal, CheckCircle, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Users, Copy, Check, Code2, Medal, CheckCircle, Trash2, Shield } from 'lucide-react';
 import { formatDateTime, formatDuration } from '@/lib/contest';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -61,6 +61,10 @@ export default function ContestCard({ contest, isCreator, userRank, userScore, h
 
   const handleEnterContest = () => {
     router.push(`/contest/${contest.id}`);
+  };
+
+  const handleModerationPanel = () => {
+    router.push(`/contest/${contest.id}/moderate`);
   };
 
   const handleDelete = async () => {
@@ -152,28 +156,7 @@ export default function ContestCard({ contest, isCreator, userRank, userScore, h
         </span>
       </div>
 
-      {/* User Stats (for joined contests with submissions) */}
-      {!isCreator && hasSubmitted && (userRank !== undefined || userScore !== undefined) && (
-        <div className="mb-4 p-3 bg-gradient-to-r from-purple-600/10 to-blue-600/10 border border-purple-500/30 rounded-lg">
-          <div className="flex items-center justify-between">
-            {userRank !== undefined && (
-              <div className="flex items-center gap-2">
-                <Medal className="h-5 w-5 text-yellow-400" />
-                <div>
-                  <p className="text-xs text-gray-400">Your Rank</p>
-                  <p className="text-lg font-bold text-white">#{userRank}</p>
-                </div>
-              </div>
-            )}
-            {userScore !== undefined && (
-              <div className="text-right">
-                <p className="text-xs text-gray-400">Score</p>
-                <p className="text-lg font-bold text-purple-400">{userScore} pts</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/*  */}
 
       {/* Details */}
       <div className="space-y-3 mb-4">
@@ -250,12 +233,14 @@ export default function ContestCard({ contest, isCreator, userRank, userScore, h
           View Contest
         </button>
       )}
-      {contest.status === 'ended' && (
-        <button 
-          onClick={handleEnterContest}
-          className="w-full mt-4 px-4 py-2 border border-gray-700 hover:bg-gray-800 text-white rounded-lg font-medium transition-colors"
+      {contest.status === 'ended' && isCreator && (
+        <button
+          onClick={handleModerationPanel}
+          className="flex items-center justify-center gap-2 w-full mt-4 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+          title="Moderation Panel"
         >
-          View Results
+          <Shield className="h-4 w-4" />
+          <span>Moderation Panel</span>
         </button>
       )}
     </div>

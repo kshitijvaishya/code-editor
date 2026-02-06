@@ -445,7 +445,7 @@ export default function ContestPage() {
     await loadContestData();
     
     // Show alert about termination
-    alert(`Contest terminated!\n\n${reason}\n\nYour submission has been recorded. Check the leaderboard for your rank.`);
+    alert(`Contest terminated!\n\n${reason}\n\nYour submission has been recorded.`);
   };
 
   const enterFullscreen = async () => {
