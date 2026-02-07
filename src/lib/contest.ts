@@ -1,21 +1,26 @@
 // Contest Types
 export type ContestStatus = 'upcoming' | 'live' | 'ended';
 
-export interface Contest {
+// Database contest type (without computed status field)
+export interface StoredContest {
   id: string;
   name: string;
   description?: string;
-  startTime: string;
-  endTime: string;
-  status: ContestStatus;
+  startTime: string; // Must be UTC ISO format
+  endTime: string; // Must be UTC ISO format
   joinCode: string;
   creatorId: string;
   createdAt: string;
   participants: Participant[];
   participantLimit?: number;
-  problemIds: string[]; // IDs of problems in this contest
+  problemIds: string[];
   submissions?: ContestSubmission[];
-  resultsPublished?: boolean; // Whether results are visible to participants
+  resultsPublished?: boolean;
+}
+
+// Public-facing contest type (with computed status)
+export interface Contest extends StoredContest {
+  status: ContestStatus; // Computed dynamically, never stored
 }
 
 export interface Participant {
@@ -73,9 +78,11 @@ export function generateJoinCode(): string {
 }
 
 export function getContestStatus(startTime: string, endTime: string): ContestStatus {
-  const now = new Date();
-  const start = new Date(startTime);
-  const end = new Date(endTime);
+  // CRITICAL: All time comparisons must be done in UTC
+  // new Date() returns UTC time when comparing Date objects
+  const now = new Date(); // Current UTC time
+  const start = new Date(startTime); // Parse UTC ISO string
+  const end = new Date(endTime); // Parse UTC ISO string
 
   if (now < start) return 'upcoming';
   if (now >= start && now <= end) return 'live';
@@ -83,6 +90,7 @@ export function getContestStatus(startTime: string, endTime: string): ContestSta
 }
 
 export function formatDateTime(dateString: string): string {
+  // Takes UTC ISO string and displays in user's local timezone
   const date = new Date(dateString);
   return date.toLocaleString('en-US', {
     month: 'short',
@@ -104,4 +112,38 @@ export function formatDuration(startTime: string, endTime: string): string {
   if (hours === 0) return `${minutes}m`;
   if (minutes === 0) return `${hours}h`;
   return `${hours}h ${minutes}m`;
+}
+
+// Validate that timestamp is in UTC ISO format
+export function isValidUTCTimestamp(timestamp: string): boolean {
+  // Check if string matches ISO 8601 format with Z (UTC) indicator
+  // Example: 2024-01-15T10:30:00.000Z
+  const isoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/;
+  
+  if (!isoRegex.test(timestamp)) {
+    return false;
+  }
+  
+  // Validate it's a valid date
+  const date = new Date(timestamp);
+  if (isNaN(date.getTime())) {
+    return false;
+  }
+  
+  // Ensure the ISO string matches (prevents timezone shifts)
+  return date.toISOString() === timestamp;
+}
+
+// Format UTC timestamp for display in user's timezone
+export function formatDateTimeInTimezone(utcTimestamp: string, timezone: string = 'Asia/Kolkata'): string {
+  const date = new Date(utcTimestamp);
+  return date.toLocaleString('en-US', {
+    timeZone: timezone,
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
 }

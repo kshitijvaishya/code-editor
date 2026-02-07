@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { contestDb } from '@/lib/contestDb';
-import { CreateContestRequest } from '@/lib/contest';
+import { CreateContestRequest, isValidUTCTimestamp } from '@/lib/contest';
 import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -25,6 +25,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // CRITICAL: Validate timestamps are in UTC ISO format
+    if (!isValidUTCTimestamp(startTime)) {
+      return NextResponse.json(
+        { success: false, message: 'Start time must be in UTC ISO format (e.g., 2024-01-15T10:30:00.000Z)' },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidUTCTimestamp(endTime)) {
+      return NextResponse.json(
+        { success: false, message: 'End time must be in UTC ISO format (e.g., 2024-01-15T10:30:00.000Z)' },
+        { status: 400 }
+      );
+    }
+
     if (!problemIds || problemIds.length === 0) {
       return NextResponse.json(
         { success: false, message: 'At least one problem is required' },
@@ -32,9 +47,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // All time comparisons in UTC
     const start = new Date(startTime);
     const end = new Date(endTime);
-    const now = new Date();
+    const now = new Date(); // This is UTC
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return NextResponse.json(

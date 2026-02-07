@@ -53,9 +53,16 @@ export default function CreateContestModal({ isOpen, onClose, onSuccess }: Creat
       return;
     }
 
+    // Convert local datetime-local input to UTC ISO format
     const start = new Date(startTime);
     const end = new Date(endTime);
     const now = new Date();
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      setError('Invalid date format');
+      setIsLoading(false);
+      return;
+    }
 
     if (start < now) {
       setError('Start time cannot be in the past');
@@ -69,6 +76,10 @@ export default function CreateContestModal({ isOpen, onClose, onSuccess }: Creat
       return;
     }
 
+    // Convert to UTC ISO format before sending to backend
+    const startTimeUTC = start.toISOString();
+    const endTimeUTC = end.toISOString();
+
     try {
       const response = await fetch('/api/contests/create', {
         method: 'POST',
@@ -76,8 +87,8 @@ export default function CreateContestModal({ isOpen, onClose, onSuccess }: Creat
         body: JSON.stringify({ 
           name, 
           description, 
-          startTime, 
-          endTime,
+          startTime: startTimeUTC, 
+          endTime: endTimeUTC,
           problemIds: selectedProblems
         }),
       });

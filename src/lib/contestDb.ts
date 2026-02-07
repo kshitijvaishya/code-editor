@@ -1,4 +1,4 @@
-import { Contest, Participant, generateJoinCode, getContestStatus } from './contest';
+import { Contest, StoredContest, Participant, generateJoinCode, getContestStatus } from './contest';
 import { getDatabase } from './mongodb';
 
 // MongoDB-based database
@@ -7,7 +7,15 @@ class ContestDatabase {
 
   private async getContestsCollection() {
     const db = await getDatabase();
-    return db.collection<Contest>('contests');
+    return db.collection<StoredContest>('contests');
+  }
+
+  // Helper to convert stored contest to public contest with computed status
+  private attachStatus(storedContest: StoredContest): Contest {
+    return {
+      ...storedContest,
+      status: getContestStatus(storedContest.startTime, storedContest.endTime)
+    };
   }
 
   async createContest(name: string, startTime: string, endTime: string, creatorId: string, creatorUsername: string, problemIds: string[] = [], description?: string): Promise<{ contest: Contest; joinCode: string }> {
@@ -22,13 +30,13 @@ class ContestDatabase {
       if (!existing) break;
     } while (true);
 
-    const contest: Contest = {
+    const storedContest: StoredContest = {
       id: contestId,
       name,
       description,
       startTime,
       endTime,
-      status: getContestStatus(startTime, endTime),
+      // NO STATUS FIELD - computed dynamically
       joinCode,
       creatorId,
       createdAt: new Date().toISOString(),
@@ -46,46 +54,42 @@ class ContestDatabase {
       resultsPublished: false,
     };
 
-    await collection.insertOne(contest as any);
+    await collection.insertOne(storedContest as any);
 
-    return { contest, joinCode };
+    return { contest: this.attachStatus(storedContest), joinCode };
   }
 
   async getContestByJoinCode(joinCode: string): Promise<Contest | null> {
     const collection = await this.getContestsCollection();
-    const contest = await collection.findOne({ joinCode });
+    const storedContest = await collection.findOne({ joinCode });
     
-    if (!contest) return null;
+    if (!storedContest) return null;
 
-    // Update status
-    contest.status = getContestStatus(contest.startTime, contest.endTime);
-    return contest;
+    // Compute status dynamically
+    return this.attachStatus(storedContest);
   }
 
   async getContestById(contestId: string): Promise<Contest | null> {
     const collection = await this.getContestsCollection();
-    const contest = await collection.findOne({ id: contestId });
+    const storedContest = await collection.findOne({ id: contestId });
     
-    if (!contest) return null;
+    if (!storedContest) return null;
 
-    // Update status
-    contest.status = getContestStatus(contest.startTime, contest.endTime);
-    return contest;
+    // Compute status dynamically
+    return this.attachStatus(storedContest);
   }
 
   async getUserContests(userId: string): Promise<Contest[]> {
     const collection = await this.getContestsCollection();
-    const contests = await collection.find({
+    const storedContests = await collection.find({
       $or: [
         { creatorId: userId },
         { 'participants.userId': userId }
       ]
     }).toArray();
     
-    // Update status for each contest
-    contests.forEach(contest => {
-      contest.status = getContestStatus(contest.startTime, contest.endTime);
-    });
+    // Compute status for each contest dynamically
+    const contests = storedContests.map(sc => this.attachStatus(sc));
 
     return contests.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
@@ -120,8 +124,9 @@ class ContestDatabase {
       return { success: false, message: 'Invalid join code' };
     }
 
-    // Check contest status
-    if (contest.status === 'ended') {
+    // Dynamically check contest status using UTC time
+    const contestStatus = getContestStatus(contest.startTime, contest.endTime);
+    if (contestStatus === 'ended') {
       return { success: false, message: 'Contest has ended' };
     }
 
@@ -165,8 +170,10 @@ class ContestDatabase {
       return { success: false, message: 'Contest not found' };
     }
 
-    if (contest.status !== 'live') {
-      return { success: false, message: 'Contest is not active' };
+    // Dynamically check contest status using UTC time
+    const contestStatus = getContestStatus(contest.startTime, contest.endTime);
+    if (contestStatus !== 'live') {
+      return { success: false, message: `Contest is not active. Current status: ${contestStatus}` };
     }
 
     const submission: any = {
@@ -299,7 +306,9 @@ class ContestDatabase {
       return { success: false, message: 'Only contest creator can publish results' };
     }
 
-    if (contest.status !== 'ended') {
+    // Dynamically check contest status using UTC time
+    const contestStatus = getContestStatus(contest.startTime, contest.endTime);
+    if (contestStatus !== 'ended') {
       return { success: false, message: 'Can only publish results after contest ends' };
     }
 
