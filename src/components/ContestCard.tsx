@@ -217,14 +217,6 @@ export default function ContestCard({ contest, isCreator, userRank, userScore, h
           Enter Contest
         </button>
       )}
-      {contest.status === 'live' && hasSubmitted && !isCreator && (
-        <button 
-          onClick={handleEnterContest}
-          className="w-full mt-4 px-4 py-2 border border-primary bg-primary/10 hover:bg-primary/20 text-primary rounded-lg font-medium transition-colors"
-        >
-          View Submissions & Leaderboard
-        </button>
-      )}
       {contest.status === 'upcoming' && (
         <button 
           onClick={handleEnterContest}
