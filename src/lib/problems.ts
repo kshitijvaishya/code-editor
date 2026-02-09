@@ -1,6 +1,6 @@
 // Problem Types and Interfaces
-export type ProblemDifficulty = 'Easy' | 'Medium' | 'Hard';
 export type ProblemTopic = 'Arrays' | 'Strings' | 'LinkedList' | 'Trees' | 'Graphs' | 'DP' | 'Greedy' | 'Sorting' | 'Searching' | 'Math' | 'Hashing' | 'Stack' | 'Queue';
+export type ProblemDifficulty = 'Easy' | 'Medium' | 'Hard';
 
 export interface TestCase {
   input: string;

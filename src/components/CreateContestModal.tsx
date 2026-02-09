@@ -207,29 +207,7 @@ export default function CreateContestModal({ isOpen, onClose, onSuccess }: Creat
               <label className="text-sm font-medium text-foreground/80">
                 Problems * ({selectedProblems.length} selected)
               </label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => quickSelect('Easy')}
-                  className="px-3 py-1 text-xs bg-green-500/10 border border-green-500/30 text-green-400 rounded hover:bg-green-500/20 transition-colors"
-                >
-                  3 Easy
-                </button>
-                <button
-                  type="button"
-                  onClick={() => quickSelect('Medium')}
-                  className="px-3 py-1 text-xs bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 rounded hover:bg-yellow-500/20 transition-colors"
-                >
-                  3 Medium
-                </button>
-                <button
-                  type="button"
-                  onClick={() => quickSelect('Hard')}
-                  className="px-3 py-1 text-xs bg-red-500/10 border border-red-500/30 text-red-400 rounded hover:bg-red-500/20 transition-colors"
-                >
-                  3 Hard
-                </button>
-              </div>
+              
             </div>
 
             {/* Problem Grid */}

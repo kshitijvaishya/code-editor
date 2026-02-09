@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Sidebar from '@/components/Sidebar';
+
+const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center h-full text-muted-foreground font-mono text-sm">Loading Editor...</div>
+});
 import { Contest } from '@/lib/contest';
 import { Problem, getProblemById } from '@/lib/problems';
 import { Play, Trophy, Users, Clock, CheckCircle2, XCircle, AlertCircle, ArrowLeft, Shield } from 'lucide-react';
@@ -27,6 +33,7 @@ export default function ContestPage() {
   const [problems, setProblems] = useState<Problem[]>([]);
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
   const [activeTab, setActiveTab] = useState<'problems' | 'leaderboard'>('problems');
+  const [statementTab, setStatementTab] = useState<'statement' | 'submissions'>('statement');
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState('javascript');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,6 +55,37 @@ export default function ContestPage() {
   // Flag to track if contest has been terminated (prevents any further actions)
   const [isTerminated, setIsTerminated] = useState(false);
   const terminationInProgressRef = useRef(false);
+
+  // Resizable panels
+  const [splitPosition, setSplitPosition] = useState(50); // percentage for statement panel
+  const isDraggingRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingRef.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const pct = (x / rect.width) * 100;
+      setSplitPosition(Math.min(Math.max(pct, 25), 75));
+    };
+
+    const handleMouseUp = () => {
+      isDraggingRef.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
 
 
   useEffect(() => {
@@ -317,22 +355,8 @@ export default function ContestPage() {
             alert('🎉 Congratulations! You have submitted all problems!\n\nYou will be redirected to the dashboard.');
             router.push('/dashboard/contests/private');
           }, 2000);
-        } else {
-          // Auto-navigate to next unsolved problem after 2 seconds
-          setTimeout(() => {
-            const currentIndex = problems.findIndex(p => p.id === currentProblemId);
-            const nextProblem = problems.find((p, idx) => idx > currentIndex && !newSubmittedSet.has(p.id));
-            
-            if (nextProblem) {
-              // Clear code editor and navigate to next problem
-              setCode('');
-              setSubmitResult(null);
-              setOutput('');
-              setCustomInput('');
-              setSelectedProblem(nextProblem);
-            }
-          }, 2000);
         }
+        // Stay on current problem - user navigates manually
       } else {
         setSubmitResult({ status: 'Error', message: data.message });
       }
@@ -392,13 +416,8 @@ export default function ContestPage() {
     setSelectedProblem(problem);
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy': return 'text-green-400 bg-green-500/10 border-green-500/30';
-      case 'Medium': return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30';
-      case 'Hard': return 'text-red-400 bg-red-500/10 border-red-500/30';
-      default: return 'text-muted-foreground bg-muted/50 border-border';
-    }
+  const getDifficultyColor = (_difficulty: string) => {
+    return 'text-muted-foreground bg-muted/50 border-border';
   };
 
   const getStatusIcon = (status: string) => {
@@ -988,13 +1007,6 @@ export default function ContestPage() {
                           </div>
                           <div className="text-sm font-medium mb-1">{problem.title}</div>
                           <div className="flex items-center gap-2 text-xs">
-                            <span className={`px-1.5 py-0.5 rounded ${
-                              problem.difficulty === 'Easy' ? 'bg-green-500/20 text-green-400' :
-                              problem.difficulty === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                              'bg-red-500/20 text-red-400'
-                            }`}>
-                              {problem.difficulty}
-                            </span>
                             <span className="text-muted-foreground">{problem.points} pts</span>
                           </div>
                         </button>
@@ -1005,41 +1017,44 @@ export default function ContestPage() {
 
                 {/* Main Content Area */}
                 {selectedProblem ? (
-                  <div className="flex-1 flex">
+                  <div className="flex-1 flex" ref={containerRef}>
                     {/* Problem Statement Panel */}
-                    <div className="flex-1 flex flex-col border-r border-border">
+                    <div className="flex flex-col border-r border-border" style={{ width: `${splitPosition}%` }}>
                       {/* Tabs */}
                       <div className="flex items-center gap-1 px-4 py-3 border-b border-border bg-card">
-                        <button className="px-4 py-2 text-sm font-medium bg-secondary text-foreground rounded-lg">
+                        <button
+                          onClick={() => setStatementTab('statement')}
+                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                            statementTab === 'statement'
+                              ? 'bg-secondary text-foreground'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                          }`}
+                        >
                           Statement
                         </button>
-                        <button className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-lg">
+                        <button
+                          onClick={() => setStatementTab('submissions')}
+                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                            statementTab === 'submissions'
+                              ? 'bg-secondary text-foreground'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                          }`}
+                        >
                           Submissions
+                          {userSubmissions.filter(s => s.problemId === selectedProblem.id).length > 0 && (
+                            <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-primary/20 text-primary rounded-full">
+                              {userSubmissions.filter(s => s.problemId === selectedProblem.id).length}
+                            </span>
+                          )}
                         </button>
                       </div>
 
-                      {/* Problem Content */}
+                      {/* Tab Content */}
                       <div className="flex-1 overflow-y-auto p-6 bg-card">
+                        {statementTab === 'statement' ? (
                         <div className="max-w-4xl">
                           <h1 className="text-3xl font-bold text-foreground mb-4">{selectedProblem.title}</h1>
                           
-                          <div className="flex items-center gap-3 mb-6">
-                            <span className={`px-3 py-1 text-sm font-medium rounded-lg ${
-                              selectedProblem.difficulty === 'Easy' ? 'bg-green-500/10 text-green-400 border border-green-500/30' :
-                              selectedProblem.difficulty === 'Medium' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30' :
-                              'bg-red-500/10 text-red-400 border border-red-500/30'
-                            }`}>
-                              {selectedProblem.difficulty}
-                            </span>
-                            <span className="text-muted-foreground">•</span>
-                            <span className="text-muted-foreground">{selectedProblem.points} points</span>
-                            <span className="text-muted-foreground">•</span>
-                            <span className="text-muted-foreground">Time: {selectedProblem.timeLimit}s</span>
-                            <span className="text-muted-foreground">•</span>
-                            <span className="text-muted-foreground">Memory: {selectedProblem.memoryLimit}MB</span>
-                            <span className="text-muted-foreground">•</span>
-                            <span className="text-blue-400 font-medium">{selectedProblem.testCases.length} Test Cases</span>
-                          </div>
 
                           <div className="prose prose-invert max-w-none">
                             <div className="text-foreground/80 text-base leading-relaxed whitespace-pre-wrap mb-8">
@@ -1096,11 +1111,70 @@ export default function ContestPage() {
                             </div>
                           </div>
                         </div>
+                        ) : (
+                        /* Submissions Tab Content */
+                        <div className="max-w-4xl">
+                          <h2 className="text-xl font-bold text-foreground mb-4">Your Submissions</h2>
+                          {userSubmissions.filter(s => s.problemId === selectedProblem.id).length === 0 ? (
+                            <div className="text-center py-12">
+                              <AlertCircle className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
+                              <p className="text-muted-foreground">No submissions yet for this problem.</p>
+                              <p className="text-muted-foreground/60 text-sm mt-1">Write your solution and click Submit to see results here.</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              {userSubmissions
+                                .filter(s => s.problemId === selectedProblem.id)
+                                .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+                                .map((submission, idx) => (
+                                  <div key={submission.id || idx} className="bg-secondary/50 border border-border rounded-lg p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2">
+                                        {submission.status === 'Accepted' ? (
+                                          <CheckCircle2 className="h-5 w-5 text-green-400" />
+                                        ) : (
+                                          <XCircle className="h-5 w-5 text-red-400" />
+                                        )}
+                                        <span className={`font-semibold ${
+                                          submission.status === 'Accepted' ? 'text-green-400' : 'text-red-400'
+                                        }`}>
+                                          {submission.status}
+                                        </span>
+                                      </div>
+                                      <span className="text-xs text-muted-foreground">
+                                        {new Date(submission.submittedAt).toLocaleTimeString()}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-sm">
+                                      <span className="text-foreground/70">
+                                        Test Cases: <span className={submission.testsPassed === submission.totalTests ? 'text-green-400 font-semibold' : 'text-yellow-400 font-semibold'}>
+                                          {submission.testsPassed}/{submission.totalTests}
+                                        </span>
+                                      </span>
+                                      <span className="text-foreground/70">
+                                        Points: <span className="text-blue-400 font-semibold">+{submission.points}</span>
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+                        )}
                       </div>
                     </div>
 
+                    {/* Resizable Divider */}
+                    <div
+                      onMouseDown={handleMouseDown}
+                      className="w-1.5 bg-border hover:bg-primary/60 cursor-col-resize transition-colors flex-shrink-0 relative group"
+                    >
+                      <div className="absolute inset-y-0 -left-1 -right-1" />
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-8 rounded-full bg-muted-foreground/40 group-hover:bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+
                     {/* Code Editor Panel */}
-                    <div className="w-1/2 flex flex-col bg-background">
+                    <div className="flex flex-col bg-background" style={{ width: `${100 - splitPosition}%` }}>
                       {/* Editor Header */}
                       <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
                         <div className="flex items-center gap-2">
@@ -1223,12 +1297,30 @@ export default function ContestPage() {
                       <div className="flex-1 flex flex-col overflow-hidden">
                         {/* Code Editor */}
                         <div className="flex-1 overflow-hidden">
-                          <textarea
+                          <MonacoEditor
+                            height="100%"
+                            language={language}
                             value={code}
-                            onChange={(e) => setCode(e.target.value)}
-                            className="w-full h-full p-4 bg-background text-foreground font-mono text-sm resize-none focus:outline-none"
-                            placeholder="// Write your code here..."
-                            spellCheck={false}
+                            onChange={(value) => setCode(value || '')}
+                            theme="vs-dark"
+                            options={{
+                              minimap: { enabled: false },
+                              fontSize: 14,
+                              lineNumbers: 'on',
+                              scrollBeyondLastLine: false,
+                              automaticLayout: true,
+                              padding: { top: 10 },
+                              wordWrap: 'on',
+                              tabSize: 4,
+                              renderLineHighlight: 'line',
+                              cursorBlinking: 'smooth',
+                              smoothScrolling: true,
+                              contextmenu: false,
+                              folding: true,
+                              lineNumbersMinChars: 3,
+                              glyphMargin: false,
+                              overviewRulerBorder: false,
+                            }}
                           />
                         </div>
 
@@ -1268,12 +1360,7 @@ export default function ContestPage() {
                       </div>
 
                       {/* Footer Info */}
-                      <div className="px-4 py-2 border-t border-border bg-card text-xs text-muted-foreground">
-                        <div className="flex items-center justify-between">
-                          <span>Time Limit: {selectedProblem.timeLimit}s • Memory Limit: {selectedProblem.memoryLimit}MB</span>
-                          <span>{contest.status === 'live' ? getTimeRemaining() : 'Contest Ended'}</span>
-                        </div>
-                      </div>
+                      
                     </div>
                   </div>
                 ) : (
