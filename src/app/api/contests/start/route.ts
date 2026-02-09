@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { contestId } = await request.json();
+    const { contestId, terminated } = await request.json();
 
     if (!contestId) {
       return NextResponse.json(
@@ -32,7 +32,43 @@ export async function POST(request: NextRequest) {
       userId: user.userId,
     });
 
+    // If this is a termination request, update the existing entry
+    if (terminated) {
+      if (existingEntry) {
+        await contestEntries.updateOne(
+          { contestId, userId: user.userId },
+          { 
+            $set: { 
+              terminated: true,
+              terminatedAt: new Date().toISOString()
+            } 
+          }
+        );
+      } else {
+        // Create entry with termination flag if it doesn't exist
+        await contestEntries.insertOne({
+          contestId,
+          userId: user.userId,
+          username: user.username,
+          startedAt: new Date().toISOString(),
+          terminated: true,
+          terminatedAt: new Date().toISOString(),
+        });
+      }
+      return NextResponse.json({
+        success: true,
+        message: 'Contest termination recorded',
+      });
+    }
+
     if (existingEntry) {
+      // If already started and terminated, prevent re-entry
+      if (existingEntry.terminated) {
+        return NextResponse.json(
+          { success: false, message: 'This contest was terminated. You cannot re-enter.', terminated: true },
+          { status: 403 }
+        );
+      }
       return NextResponse.json(
         { success: false, message: 'You have already started this contest', alreadyStarted: true },
         { status: 400 }
@@ -45,6 +81,7 @@ export async function POST(request: NextRequest) {
       userId: user.userId,
       username: user.username,
       startedAt: new Date().toISOString(),
+      terminated: false,
     });
 
     return NextResponse.json({
@@ -93,6 +130,7 @@ export async function GET(request: NextRequest) {
       success: true,
       hasStarted: !!entry,
       startedAt: entry?.startedAt,
+      terminated: entry?.terminated || false,
     });
   } catch (error) {
     console.error('Error checking contest entry:', error);

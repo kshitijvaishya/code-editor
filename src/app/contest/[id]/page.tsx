@@ -151,12 +151,26 @@ export default function ContestPage() {
       }
     };
 
-    // Using passive: false to ensure events are captured
+    // ESC key handler to detect and prevent fullscreen exit via ESC key
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !terminationInProgressRef.current) {
+        // Prevent default ESC behavior (would exit fullscreen)
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // IMMEDIATE TERMINATION - ESC key pressed
+        terminationInProgressRef.current = true;
+        terminateContest('Pressed ESC key to exit fullscreen');
+      }
+    };
+
+    // Using passive: false to ensure events are captured and can be prevented
     document.addEventListener('visibilitychange', handleVisibilityChange, { passive: false });
     document.addEventListener('fullscreenchange', handleFullscreenChange, { passive: false });
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange, { passive: false });
     document.addEventListener('mozfullscreenchange', handleFullscreenChange, { passive: false });
     document.addEventListener('MSFullscreenChange', handleFullscreenChange, { passive: false });
+    document.addEventListener('keydown', handleKeyDown, { passive: false });
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -164,6 +178,7 @@ export default function ContestPage() {
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
       document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
       document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+      document.removeEventListener('keydown', handleKeyDown);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasStarted, contest, isTerminated]);
@@ -198,6 +213,13 @@ export default function ContestPage() {
         const startCheckData = await startCheckResponse.json();
         
         if (startCheckData.success && startCheckData.hasStarted) {
+          // Check if contest was terminated
+          if (startCheckData.terminated) {
+            alert('This contest was previously terminated.\n\nYou cannot re-enter. Redirecting to dashboard.');
+            router.push('/dashboard/contests/private');
+            return;
+          }
+          
           // User has already started - check if they have submissions
           const hasUserSubmitted = (data.userSubmissions || []).length > 0;
           
@@ -464,8 +486,18 @@ export default function ContestPage() {
       document.exitFullscreen().catch(() => {});
     }
 
+    // Record termination on the server to prevent re-entry
+    fetch('/api/contests/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        contestId: contest.id,
+        terminated: true
+      }),
+    }).catch(() => {});
+
     // Show alert FIRST, then redirect after user acknowledges
-    alert(`🚨 Your contest has been terminated!\n\nReason: ${reason}\n\nYou will be redirected to the dashboard.`);
+    alert(`🚨 Your contest has been terminated!\n\nReason: ${reason}\n\nYou cannot re-enter this contest. You will be redirected to the dashboard.`);
     
     // Redirect after alert is closed
     router.replace('/dashboard/contests/private');
@@ -515,6 +547,11 @@ export default function ContestPage() {
       if (!data.success) {
         if (data.alreadyStarted) {
           alert('You have already started this contest!\n\nFor security reasons, you cannot re-enter.');
+          router.push('/dashboard/contests/private');
+          return;
+        }
+        if (data.terminated) {
+          alert('This contest was previously terminated.\n\nYou cannot re-enter.');
           router.push('/dashboard/contests/private');
           return;
         }
