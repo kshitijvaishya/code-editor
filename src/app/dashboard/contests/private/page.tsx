@@ -135,7 +135,7 @@ export default function PrivateContestsPage() {
   const joinedContests = contests.filter(c => c.creatorId !== currentUserId);
 
   return (
-    <div className="flex h-screen bg-gray-950 overflow-hidden">
+    <div className="flex h-screen bg-background overflow-hidden">
       <Sidebar />
 
       <main className="flex-1 overflow-auto">
@@ -143,10 +143,10 @@ export default function PrivateContestsPage() {
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-3">
-              <Trophy className="h-8 w-8 text-purple-400" />
-              <h1 className="text-4xl font-bold text-white">Private Contests</h1>
+              <Trophy className="h-8 w-8 text-primary" />
+              <h1 className="text-4xl font-bold text-foreground">Private Contests</h1>
             </div>
-            <p className="text-gray-400">Create or join private contests with a unique join code</p>
+            <p className="text-muted-foreground">Create or join private contests with a unique join code</p>
           </div>
 
           {/* Success Message */}
@@ -163,7 +163,7 @@ export default function PrivateContestsPage() {
           <div className="grid md:grid-cols-2 gap-4 mb-8">
             <button
               onClick={() => setShowCreateModal(true)}
-              className="group flex items-center justify-center gap-3 p-6 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-all shadow-lg shadow-purple-600/20 hover:shadow-purple-600/40 hover:scale-105"
+              className="group flex items-center justify-center gap-3 p-6 bg-primary hover:brightness-110 text-primary-foreground rounded-xl transition-all shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:scale-105 btn-glow"
             >
               <Plus className="h-6 w-6" />
               <span className="text-lg font-semibold">Create New Contest</span>
@@ -171,7 +171,7 @@ export default function PrivateContestsPage() {
             
             <button
               onClick={() => setShowJoinModal(true)}
-              className="group flex items-center justify-center gap-3 p-6 border-2 border-gray-700 hover:bg-gray-800 text-white rounded-xl transition-all hover:border-purple-600/50"
+              className="group flex items-center justify-center gap-3 p-6 border-2 border-border hover:bg-secondary text-foreground rounded-xl transition-all hover:border-primary/50"
             >
               <UserPlus className="h-6 w-6" />
               <span className="text-lg font-semibold">Join with Code</span>
@@ -181,17 +181,17 @@ export default function PrivateContestsPage() {
           {/* Loading State */}
           {isLoading && (
             <div className="text-center py-12">
-              <div className="inline-block h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="mt-4 text-gray-400">Loading contests...</p>
+              <div className="inline-block h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <p className="mt-4 text-muted-foreground">Loading contests...</p>
             </div>
           )}
 
           {/* Contest Lists */}
           {!isLoading && contests.length === 0 && (
             <div className="text-center py-16">
-              <Trophy className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-400 mb-2">No Contests Yet</h3>
-              <p className="text-gray-500">Create a new contest or join one with a code to get started</p>
+              <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-muted-foreground mb-2">No Contests Yet</h3>
+              <p className="text-muted-foreground/70">Create a new contest or join one with a code to get started</p>
             </div>
           )}
 
@@ -199,9 +199,9 @@ export default function PrivateContestsPage() {
             <>
               {createdContests.length > 0 && (
                 <div className="mb-8">
-                  <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                  <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
                     My Created Contests
-                    <span className="text-sm font-normal text-gray-400">({createdContests.length})</span>
+                    <span className="text-sm font-normal text-muted-foreground">({createdContests.length})</span>
                   </h2>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {createdContests.map((contest) => (
@@ -221,9 +221,9 @@ export default function PrivateContestsPage() {
 
               {joinedContests.length > 0 && (
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                  <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
                     Joined Contests
-                    <span className="text-sm font-normal text-gray-400">({joinedContests.length})</span>
+                    <span className="text-sm font-normal text-muted-foreground">({joinedContests.length})</span>
                   </h2>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {joinedContests.map((contest) => (

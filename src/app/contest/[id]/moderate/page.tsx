@@ -165,11 +165,11 @@ export default function ModerationPage() {
       case 'Time Limit Exceeded':
         return 'text-orange-600';
       case 'Runtime Error':
-        return 'text-purple-600';
+        return 'text-primary';
       case 'Compilation Error':
         return 'text-yellow-600';
       default:
-        return 'text-gray-600';
+        return 'text-muted-foreground';
     }
   };
 
@@ -191,22 +191,22 @@ export default function ModerationPage() {
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty.toLowerCase()) {
       case 'easy':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-500/10 text-green-400';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-500/10 text-yellow-400';
       case 'hard':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-500/10 text-red-400';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted/50 text-muted-foreground';
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-background">
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
       </div>
     );
@@ -214,15 +214,15 @@ export default function ModerationPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-background">
         <Sidebar />
         <div className="flex-1 flex flex-col items-center justify-center p-6">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
-            <h2 className="text-xl font-semibold text-red-800 mb-2">Access Denied</h2>
-            <p className="text-red-600 mb-4">{error}</p>
+          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-6 max-w-md">
+            <h2 className="text-xl font-semibold text-destructive mb-2">Access Denied</h2>
+            <p className="text-destructive/80 mb-4">{error}</p>
             <button
               onClick={() => router.push('/dashboard')}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+              className="bg-destructive text-destructive-foreground px-4 py-2 rounded-lg hover:brightness-110"
             >
               Return to Dashboard
             </button>
@@ -237,48 +237,48 @@ export default function ModerationPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-background">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="bg-card border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => router.push(`/contest/${contestId}`)}
-                className="text-gray-600 hover:text-gray-900"
+                className="text-muted-foreground hover:text-foreground"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{data.contest.name}</h1>
-                <p className="text-sm text-gray-600">Moderation Panel</p>
+                <h1 className="text-2xl font-bold text-foreground">{data.contest.name}</h1>
+                <p className="text-sm text-muted-foreground">Moderation Panel</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="bg-indigo-50 px-4 py-2 rounded-lg">
-                <div className="text-sm text-indigo-600 font-medium">Total Submissions</div>
-                <div className="text-2xl font-bold text-indigo-900">{data.totalSubmissions}</div>
+              <div className="bg-primary/10 px-4 py-2 rounded-lg">
+                <div className="text-sm text-primary font-medium">Total Submissions</div>
+                <div className="text-2xl font-bold text-foreground">{data.totalSubmissions}</div>
               </div>
-              <div className="bg-green-50 px-4 py-2 rounded-lg">
-                <div className="text-sm text-green-600 font-medium">Participants</div>
-                <div className="text-2xl font-bold text-green-900">{data.participants.length}</div>
+              <div className="bg-green-500/10 px-4 py-2 rounded-lg">
+                <div className="text-sm text-green-400 font-medium">Participants</div>
+                <div className="text-2xl font-bold text-foreground">{data.participants.length}</div>
               </div>
               {/* Publish Results Button */}
               {data.contest.status === 'ended' && !data.contest.resultsPublished && (
                 <button
                   onClick={handlePublishResults}
                   disabled={isPublishing}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium shadow-lg transition-all flex items-center gap-2"
+                  className="bg-gradient-to-r from-primary to-accent hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground px-6 py-3 rounded-lg font-medium shadow-lg transition-all flex items-center gap-2 btn-glow"
                 >
                   <Trophy className="w-5 h-5" />
                   {isPublishing ? 'Publishing...' : 'Publish Results'}
                 </button>
               )}
               {data.contest.resultsPublished && (
-                <div className="bg-green-50 border border-green-200 px-4 py-2 rounded-lg flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  <span className="text-green-700 font-medium">Results Published</span>
+                <div className="bg-green-500/10 border border-green-500/30 px-4 py-2 rounded-lg flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-400" />
+                  <span className="text-green-400 font-medium">Results Published</span>
                 </div>
               )}
             </div>
@@ -290,8 +290,8 @@ export default function ModerationPage() {
               onClick={() => setViewMode('participants')}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 viewMode === 'participants'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-muted-foreground hover:bg-muted'
               }`}
             >
               <Users className="w-4 h-4 inline mr-2" />
@@ -301,8 +301,8 @@ export default function ModerationPage() {
               onClick={() => setViewMode('problems')}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 viewMode === 'problems'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-muted-foreground hover:bg-muted'
               }`}
             >
               <FileCode className="w-4 h-4 inline mr-2" />
@@ -317,28 +317,28 @@ export default function ModerationPage() {
             /* Participants View */
             <div className="space-y-4">
               {data.participants.map((participant) => (
-                <div key={participant.userId} className="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div key={participant.userId} className="bg-card rounded-lg shadow-sm border border-border">
                   {/* Participant Header */}
                   <div
-                    className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50"
+                    className="flex items-center justify-between p-4 cursor-pointer hover:bg-secondary/50"
                     onClick={() => toggleParticipant(participant.userId)}
                   >
                     <div className="flex items-center space-x-4">
-                      <div className="bg-indigo-100 rounded-full p-3">
-                        <Users className="w-6 h-6 text-indigo-600" />
+                      <div className="bg-primary/20 rounded-full p-3">
+                        <Users className="w-6 h-6 text-primary" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{participant.username}</h3>
+                        <h3 className="text-lg font-semibold text-foreground">{participant.username}</h3>
                         <div className="flex items-center space-x-4 mt-1">
-                          <span className="text-sm text-gray-600">
+                          <span className="text-sm text-muted-foreground">
                             <Trophy className="w-4 h-4 inline mr-1" />
                             Score: {participant.score}
                           </span>
-                          <span className="text-sm text-gray-600">
+                          <span className="text-sm text-muted-foreground">
                             <CheckCircle2 className="w-4 h-4 inline mr-1" />
                             Solved: {participant.problemsSolved}
                           </span>
-                          <span className="text-sm text-gray-600">
+                          <span className="text-sm text-muted-foreground">
                             <Code className="w-4 h-4 inline mr-1" />
                             Submissions: {participant.totalSubmissions}
                           </span>
@@ -346,25 +346,25 @@ export default function ModerationPage() {
                       </div>
                     </div>
                     {expandedParticipants.has(participant.userId) ? (
-                      <ChevronUp className="w-5 h-5 text-gray-400" />
+                      <ChevronUp className="w-5 h-5 text-muted-foreground" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                      <ChevronDown className="w-5 h-5 text-muted-foreground" />
                     )}
                   </div>
 
                   {/* Participant Submissions */}
                   {expandedParticipants.has(participant.userId) && (
-                    <div className="border-t border-gray-200 p-4 bg-gray-50">
+                    <div className="border-t border-border p-4 bg-secondary/30">
                       {Object.values(participant.submissionsByProblem).map((problemData: any) => (
                         <div key={problemData.problemId} className="mb-4 last:mb-0">
                           <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-semibold text-gray-900">
+                            <h4 className="font-semibold text-foreground">
                               {problemData.problemTitle}
                               <span className={`ml-2 text-xs px-2 py-1 rounded ${getDifficultyColor(problemData.problemDifficulty)}`}>
                                 {problemData.problemDifficulty}
                               </span>
                             </h4>
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm text-muted-foreground">
                               {problemData.submissions.length} submission(s)
                             </span>
                           </div>
@@ -374,7 +374,7 @@ export default function ModerationPage() {
                               {problemData.submissions.map((submission: Submission) => (
                                 <div
                                   key={submission.id}
-                                  className="bg-white border border-gray-200 rounded p-3 hover:shadow-md transition-shadow"
+                                  className="bg-card border border-border rounded p-3 hover:shadow-md transition-shadow"
                                 >
                                   <div className="flex items-center justify-between">
                                     <div className="flex-1">
@@ -383,25 +383,25 @@ export default function ModerationPage() {
                                           {getStatusIcon(submission.status)}
                                           <span>{submission.status}</span>
                                         </span>
-                                        <span className="text-sm text-gray-600">
+                                        <span className="text-sm text-muted-foreground">
                                           {submission.testsPassed}/{submission.totalTests} tests
                                         </span>
-                                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                        <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
                                           {submission.language}
                                         </span>
                                         {submission.executionTime && (
-                                          <span className="text-xs text-gray-500">
+                                          <span className="text-xs text-muted-foreground">
                                             {submission.executionTime}ms
                                           </span>
                                         )}
                                       </div>
-                                      <div className="text-xs text-gray-500 mt-1">
+                                      <div className="text-xs text-muted-foreground/70 mt-1">
                                         {new Date(submission.submittedAt).toLocaleString()}
                                       </div>
                                     </div>
                                     <button
                                       onClick={() => viewSubmission(submission)}
-                                      className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700"
+                                      className="bg-primary text-primary-foreground px-3 py-1 rounded text-sm hover:brightness-110"
                                     >
                                       View Code
                                     </button>
@@ -410,7 +410,7 @@ export default function ModerationPage() {
                               ))}
                             </div>
                           ) : (
-                            <p className="text-sm text-gray-500 italic">No submissions yet</p>
+                            <p className="text-sm text-muted-foreground italic">No submissions yet</p>
                           )}
                         </div>
                       ))}
@@ -421,8 +421,8 @@ export default function ModerationPage() {
 
               {data.participants.length === 0 && (
                 <div className="text-center py-12">
-                  <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">No participants yet</p>
+                  <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No participants yet</p>
                 </div>
               )}
             </div>
@@ -434,19 +434,19 @@ export default function ModerationPage() {
                   .flatMap(p => p.submissionsByProblem[problem.id]?.submissions || []);
 
                 return (
-                  <div key={problem.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div key={problem.id} className="bg-card rounded-lg shadow-sm border border-border p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900">{problem.title}</h3>
+                        <h3 className="text-xl font-bold text-foreground">{problem.title}</h3>
                         <div className="flex items-center space-x-3 mt-2">
                           <span className={`text-xs px-2 py-1 rounded ${getDifficultyColor(problem.difficulty)}`}>
                             {problem.difficulty}
                           </span>
-                          <span className="text-sm text-gray-600">
+                          <span className="text-sm text-muted-foreground">
                             <Trophy className="w-4 h-4 inline mr-1" />
                             {problem.points} points
                           </span>
-                          <span className="text-sm text-gray-600">
+                          <span className="text-sm text-muted-foreground">
                             {allSubmissionsForProblem.length} submission(s)
                           </span>
                         </div>
@@ -458,30 +458,30 @@ export default function ModerationPage() {
                         {allSubmissionsForProblem.map((submission) => (
                           <div
                             key={submission.id}
-                            className="border border-gray-200 rounded p-4 hover:shadow-md transition-shadow"
+                            className="border border-border rounded p-4 hover:shadow-md transition-shadow"
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center space-x-3">
-                                  <span className="font-medium text-gray-900">{submission.username}</span>
+                                  <span className="font-medium text-foreground">{submission.username}</span>
                                   <span className={`flex items-center space-x-1 font-medium ${getStatusColor(submission.status)}`}>
                                     {getStatusIcon(submission.status)}
                                     <span>{submission.status}</span>
                                   </span>
-                                  <span className="text-sm text-gray-600">
+                                  <span className="text-sm text-muted-foreground">
                                     {submission.testsPassed}/{submission.totalTests} tests
                                   </span>
-                                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                  <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
                                     {submission.language}
                                   </span>
                                 </div>
-                                <div className="text-xs text-gray-500 mt-1">
+                                <div className="text-xs text-muted-foreground/70 mt-1">
                                   {new Date(submission.submittedAt).toLocaleString()}
                                 </div>
                               </div>
                               <button
                                 onClick={() => viewSubmission(submission)}
-                                className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700"
+                                className="bg-primary text-primary-foreground px-3 py-1 rounded text-sm hover:brightness-110"
                               >
                                 View Code
                               </button>
@@ -490,7 +490,7 @@ export default function ModerationPage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500 italic text-center py-4">No submissions yet</p>
+                      <p className="text-sm text-muted-foreground italic text-center py-4">No submissions yet</p>
                     )}
                   </div>
                 );
@@ -503,10 +503,10 @@ export default function ModerationPage() {
       {/* Code Viewer Modal */}
       {selectedSubmission && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="bg-card rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-border">
+            <div className="flex items-center justify-between p-4 border-b border-border">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-foreground">
                   {selectedSubmission.username}&apos;s Submission
                 </h3>
                 <div className="flex items-center space-x-3 mt-1">
@@ -514,26 +514,26 @@ export default function ModerationPage() {
                     {getStatusIcon(selectedSubmission.status)}
                     <span>{selectedSubmission.status}</span>
                   </span>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-muted-foreground">
                     {selectedSubmission.testsPassed}/{selectedSubmission.totalTests} tests passed
                   </span>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                  <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
                     {selectedSubmission.language}
                   </span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-muted-foreground">
                     {new Date(selectedSubmission.submittedAt).toLocaleString()}
                   </span>
                 </div>
               </div>
               <button
                 onClick={closeSubmissionViewer}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-muted-foreground hover:text-foreground"
               >
                 <XCircle className="w-6 h-6" />
               </button>
             </div>
-            <div className="flex-1 overflow-auto p-4 bg-gray-900">
-              <pre className="text-sm text-gray-100 font-mono">
+            <div className="flex-1 overflow-auto p-4 bg-background">
+              <pre className="text-sm text-foreground font-mono">
                 <code>{selectedSubmission.code}</code>
               </pre>
             </div>

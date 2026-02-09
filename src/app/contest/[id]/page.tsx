@@ -375,7 +375,7 @@ export default function ContestPage() {
       case 'Easy': return 'text-green-400 bg-green-500/10 border-green-500/30';
       case 'Medium': return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30';
       case 'Hard': return 'text-red-400 bg-red-500/10 border-red-500/30';
-      default: return 'text-gray-400 bg-gray-500/10 border-gray-500/30';
+      default: return 'text-muted-foreground bg-muted/50 border-border';
     }
   };
 
@@ -559,12 +559,12 @@ export default function ContestPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen bg-gray-950">
+      <div className="flex h-screen bg-background">
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="inline-block h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-400">Loading contest...</p>
+            <div className="inline-block h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p className="mt-4 text-muted-foreground">Loading contest...</p>
           </div>
         </div>
       </div>
@@ -573,11 +573,11 @@ export default function ContestPage() {
 
   if (!contest) {
     return (
-      <div className="flex h-screen bg-gray-950">
+      <div className="flex h-screen bg-background">
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-gray-400">Contest not found</p>
+            <p className="text-muted-foreground">Contest not found</p>
           </div>
         </div>
       </div>
@@ -587,41 +587,41 @@ export default function ContestPage() {
   // Block all interactions if terminated
   if (isTerminated) {
     return (
-      <div className="flex h-screen bg-gray-950 items-center justify-center">
+      <div className="flex h-screen bg-background items-center justify-center">
         <div className="text-center">
-          <div className="inline-block h-12 w-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-red-400 text-xl font-semibold">Contest Terminated</p>
-          <p className="text-gray-400 mt-2">Redirecting to dashboard...</p>
+          <div className="inline-block h-12 w-12 border-4 border-destructive border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-destructive text-xl font-semibold">Contest Terminated</p>
+          <p className="text-muted-foreground mt-2">Redirecting to dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-950">
+    <div className="flex h-screen bg-background">
       {/* Sidebar - Only visible when contest hasn't started */}
       {!hasStarted && <Sidebar />}
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Enhanced Header with Real-time Timer */}
         {hasStarted && (
-          <div className="bg-gray-900 border-b border-gray-800 p-4">
+          <div className="bg-card border-b border-border p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <div>
-                  <h1 className="text-xl font-bold text-white">{contest.name}</h1>
+                  <h1 className="text-xl font-bold text-foreground">{contest.name}</h1>
                   <div className="flex items-center gap-4 mt-1">
                     <span className={`px-2 py-0.5 text-xs font-semibold border rounded ${
                       contest.status === 'live' ? 'bg-green-500/10 border-green-500/30 text-green-400' :
-                      'bg-gray-500/10 border-gray-500/30 text-gray-400'
+                      'bg-muted/50 border-border text-muted-foreground'
                     }`}>
                       🔴 LIVE
                     </span>
-                    <span className="text-sm text-gray-400 flex items-center gap-1">
+                    <span className="text-sm text-muted-foreground flex items-center gap-1">
                       <Users className="h-4 w-4" />
                       {contest.participants.length} participants
                     </span>
-                    <span className="text-sm text-gray-400 flex items-center gap-1">
+                    <span className="text-sm text-muted-foreground flex items-center gap-1">
                       <Clock className="h-4 w-4" />
                       {problems.length} problems
                     </span>
@@ -629,12 +629,12 @@ export default function ContestPage() {
                 </div>
 
                 {/* Real-time Countdown Timer */}
-                <div className="flex items-center gap-3 bg-gray-800/50 border border-gray-700 rounded-xl px-6 py-3">
+                <div className="flex items-center gap-3 bg-secondary/50 border border-border rounded-xl px-6 py-3">
                   <Clock className={`h-5 w-5 ${timeRemaining < 300000 ? 'text-red-400 animate-pulse' : 'text-yellow-400'}`} />
                   <div>
-                    <div className="text-xs text-gray-400 mb-0.5">Time Remaining</div>
+                    <div className="text-xs text-muted-foreground mb-0.5">Time Remaining</div>
                     <div className={`text-2xl font-mono font-bold ${
-                      timeRemaining < 300000 ? 'text-red-400' : 'text-white'
+                      timeRemaining < 300000 ? 'text-red-400' : 'text-foreground'
                     }`}>
                       {formatTimeRemaining(timeRemaining)}
                     </div>
@@ -649,8 +649,8 @@ export default function ContestPage() {
                     onClick={() => setActiveTab('problems')}
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                       activeTab === 'problems'
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary text-muted-foreground hover:bg-muted'
                     }`}
                   >
                     Problems
@@ -661,8 +661,8 @@ export default function ContestPage() {
                       onClick={() => setActiveTab('leaderboard')}
                       className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                         activeTab === 'leaderboard'
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary text-muted-foreground hover:bg-muted'
                       }`}
                     >
                       Leaderboard
@@ -682,68 +682,68 @@ export default function ContestPage() {
 
         {/* Fullscreen Warning Modal */}
         {showFullscreenWarning && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-8">
-            <div className="bg-gray-900 border-2 border-red-500 rounded-2xl p-8 max-w-2xl w-full shadow-2xl">
-              <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/20 rounded-full mb-4">
-                  <AlertCircle className="h-8 w-8 text-red-400" />
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-card border-2 border-red-500 rounded-2xl p-5 max-w-xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+              <div className="text-center mb-3">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-red-500/20 rounded-full mb-2">
+                  <AlertCircle className="h-6 w-6 text-red-400" />
                 </div>
-                <h2 className="text-3xl font-bold text-white mb-2">⚠️ Important Notice</h2>
-                <p className="text-gray-400 text-lg">Please read carefully before starting</p>
+                <h2 className="text-xl font-bold text-foreground">⚠️ Important Notice</h2>
+                <p className="text-muted-foreground text-sm">Please read carefully before starting</p>
               </div>
 
-              <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 mb-6">
-                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-yellow-400" />
+              <div className="bg-secondary/50 border border-border rounded-lg p-4 mb-3">
+                <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-yellow-400" />
                   Contest Security Rules
                 </h3>
-                <ul className="space-y-3 text-gray-300">
-                  <li className="flex items-start gap-3">
-                    <span className="text-red-400 font-bold">🔒</span>
-                    <span><strong className="text-white">Fullscreen Mode Required:</strong> The contest will run in fullscreen mode</span>
+                <ul className="space-y-1.5 text-sm text-foreground/80">
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">🔒</span>
+                    <span><strong className="text-foreground">Fullscreen Required</strong> — contest runs in fullscreen</span>
                   </li>
-                  <li className="flex items-start gap-3">
-                    <span className="text-red-400 font-bold">⛔</span>
-                    <span><strong className="text-white">No Tab Switching:</strong> Switching to another tab/window is strictly prohibited</span>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">⛔</span>
+                    <span><strong className="text-foreground">No Tab Switching</strong> — switching tabs is prohibited</span>
                   </li>
-                  <li className="flex items-start gap-3">
-                    <span className="text-red-400 font-bold">⚠️</span>
-                    <span><strong className="text-white">Auto-Submission:</strong> Violating any rule will auto-submit your test and terminate the contest</span>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">⚠️</span>
+                    <span><strong className="text-foreground">Auto-Submission</strong> — violations auto-submit & terminate</span>
                   </li>
-                  <li className="flex items-start gap-3">
-                    <span className="text-red-400 font-bold">⏱️</span>
-                    <span><strong className="text-white">Time Monitored:</strong> Real-time countdown timer will be displayed throughout</span>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">⏱️</span>
+                    <span><strong className="text-foreground">Timer Active</strong> — real-time countdown displayed</span>
                   </li>
-                  <li className="flex items-start gap-3">
-                    <span className="text-red-400 font-bold">🚫</span>
-                    <span><strong className="text-white">No Exits Allowed:</strong> Exiting fullscreen will terminate your contest immediately</span>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">🚫</span>
+                    <span><strong className="text-foreground">No Exits</strong> — exiting fullscreen terminates contest</span>
                   </li>
-                  <li className="flex items-start gap-3">
-                    <span className="text-blue-400 font-bold">📋</span>
-                    <span><strong className="text-white">Copy/Paste Disabled:</strong> Copy-paste operations are disabled for security but won&apos;t terminate the contest</span>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-400">📋</span>
+                    <span><strong className="text-foreground">Copy/Paste Disabled</strong> — won&apos;t terminate contest</span>
                   </li>
                 </ul>
               </div>
 
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6">
-                <p className="text-yellow-400 text-sm">
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+                <p className="text-yellow-400 text-xs">
                   <strong>⚠️ Warning:</strong> By clicking &ldquo;I Understand & Start&rdquo;, you agree to these terms. 
-                  Any violation will result in immediate test termination and auto-submission of current progress.
+                  Any violation will result in immediate termination and auto-submission.
                 </p>
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex gap-3">
                 <button
                   onClick={() => setShowFullscreenWarning(false)}
-                  className="flex-1 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-xl transition-all"
+                  className="flex-1 px-4 py-2.5 bg-secondary hover:bg-muted text-foreground font-semibold rounded-lg transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmStartContest}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-bold rounded-xl transition-all transform hover:scale-105 shadow-lg"
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-bold rounded-lg transition-all transform hover:scale-105 shadow-lg"
                 >
-                  I Understand & Start Contest
+                  I Understand & Start
                 </button>
               </div>
             </div>
@@ -752,65 +752,65 @@ export default function ContestPage() {
 
         {/* Instructions/Welcome Screen */}
         {showInstructions && !hasStarted && !showFullscreenWarning ? (
-          <div className="flex-1 overflow-y-auto flex items-center justify-center p-8">
-            <Sidebar />
-            <div className="max-w-4xl w-full">
-              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-2xl">
+          <div className="flex-1 overflow-y-auto p-4 md:p-6">
+            <div className="max-w-3xl mx-auto">
+              <div className="bg-card border border-border rounded-2xl p-5 md:p-6 shadow-2xl">
                 {/* Contest Header */}
-                <div className="text-center mb-8">
-                  <div className="inline-flex items-center justify-center w-20 h-20 bg-purple-600/20 rounded-full mb-4">
-                    <Trophy className="h-10 w-10 text-purple-400" />
+                <div className="text-center mb-4">
+                  <div className="inline-flex items-center justify-center w-14 h-14 bg-primary/20 rounded-full mb-3">
+                    <Trophy className="h-7 w-7 text-primary" />
                   </div>
-                  <h1 className="text-4xl font-bold text-white mb-2">{contest.name}</h1>
+                  <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">{contest.name}</h1>
                   {contest.description && (
-                    <p className="text-gray-400 text-lg">{contest.description}</p>
+                    <p className="text-muted-foreground text-sm">{contest.description}</p>
                   )}
                 </div>
 
-                {/* Contest Stats */}
-                <div className="grid grid-cols-3 gap-4 mb-8">
-                  <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 text-center">
-                    <div className="text-3xl font-bold text-purple-400 mb-1">{problems.length}</div>
-                    <div className="text-sm text-gray-400">Problems</div>
+                {/* Contest Stats - Compact row */}
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="bg-secondary/50 border border-border rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-primary">{problems.length}</div>
+                    <div className="text-xs text-muted-foreground">Problems</div>
                   </div>
-                  <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 text-center">
-                    <div className="text-3xl font-bold text-yellow-400 mb-1">{getTotalPoints()}</div>
-                    <div className="text-sm text-gray-400">Total Points</div>
+                  <div className="bg-secondary/50 border border-border rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-yellow-400">{getTotalPoints()}</div>
+                    <div className="text-xs text-muted-foreground">Total Points</div>
                   </div>
-                  <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 text-center">
-                    <div className="text-3xl font-bold text-green-400 mb-1">{contest.participants.length}</div>
-                    <div className="text-sm text-gray-400">Participants</div>
+                  <div className="bg-secondary/50 border border-border rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-green-400">{contest.participants.length}</div>
+                    <div className="text-xs text-muted-foreground">Participants</div>
                   </div>
                 </div>
 
-                {/* Contest Information */}
-                <div className="space-y-6 mb-8">
+                {/* Contest Information & Rules - Two column layout */}
+                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                  {/* Contest Information */}
                   <div>
-                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                      <AlertCircle className="h-5 w-5 text-blue-400" />
+                    <h2 className="text-base font-bold text-foreground mb-2 flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-blue-400" />
                       Contest Information
                     </h2>
-                    <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-6 space-y-3">
+                    <div className="bg-secondary/30 border border-border rounded-lg p-4 space-y-2 text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Start Time:</span>
-                        <span className="text-white font-medium">{new Date(contest.startTime).toLocaleString()}</span>
+                        <span className="text-muted-foreground">Start Time:</span>
+                        <span className="text-foreground font-medium">{new Date(contest.startTime).toLocaleString()}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400">End Time:</span>
-                        <span className="text-white font-medium">{new Date(contest.endTime).toLocaleString()}</span>
+                        <span className="text-muted-foreground">End Time:</span>
+                        <span className="text-foreground font-medium">{new Date(contest.endTime).toLocaleString()}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Duration:</span>
-                        <span className="text-white font-medium">
+                        <span className="text-muted-foreground">Duration:</span>
+                        <span className="text-foreground font-medium">
                           {Math.floor((new Date(contest.endTime).getTime() - new Date(contest.startTime).getTime()) / (1000 * 60))} minutes
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Status:</span>
+                        <span className="text-muted-foreground">Status:</span>
                         <span className={`font-semibold ${
                           contest.status === 'live' ? 'text-green-400' :
                           contest.status === 'upcoming' ? 'text-blue-400' :
-                          'text-gray-400'
+                          'text-muted-foreground'
                         }`}>
                           {contest.status === 'live' ? '🟢 Live Now' :
                            contest.status === 'upcoming' ? '🔵 Upcoming' :
@@ -820,76 +820,70 @@ export default function ContestPage() {
                     </div>
                   </div>
 
+                  {/* Contest Rules */}
                   <div>
-                    <h2 className="text-xl font-bold text-white mb-4">📋 Contest Rules</h2>
-                    <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-6">
-                      <ul className="space-y-3 text-gray-300">
-                        <li className="flex items-start gap-3">
-                          <span className="text-purple-400 font-bold">•</span>
-                          <span>Solve {problems.length} DSA problems within the contest duration</span>
+                    <h2 className="text-base font-bold text-foreground mb-2">📋 Contest Rules</h2>
+                    <div className="bg-secondary/30 border border-border rounded-lg p-4">
+                      <ul className="space-y-1.5 text-sm text-foreground/80">
+                        <li className="flex items-start gap-2">
+                          <span className="text-primary font-bold">•</span>
+                          <span>Solve {problems.length} DSA problems within the duration</span>
                         </li>
-                        <li className="flex items-start gap-3">
-                          <span className="text-purple-400 font-bold">•</span>
-                          <span>Each problem has test cases - pass all to get full points</span>
+                        <li className="flex items-start gap-2">
+                          <span className="text-primary font-bold">•</span>
+                          <span>Pass all test cases to get full points</span>
                         </li>
-                        <li className="flex items-start gap-3">
-                          <span className="text-purple-400 font-bold">•</span>
-                          <span>Supported languages: C, C++, Python, Java, JavaScript</span>
+                        <li className="flex items-start gap-2">
+                          <span className="text-primary font-bold">•</span>
+                          <span>Languages: C, C++, Python, Java, JavaScript</span>
                         </li>
-                        <li className="flex items-start gap-3">
-                          <span className="text-purple-400 font-bold">•</span>
-                          <span>Your score is based on problems solved and points earned</span>
+                        <li className="flex items-start gap-2">
+                          <span className="text-primary font-bold">•</span>
+                          <span>Score based on problems solved & points earned</span>
                         </li>
-                        <li className="flex items-start gap-3">
-                          <span className="text-purple-400 font-bold">•</span>
-                          <span>Check the leaderboard to see your ranking</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <span className="text-purple-400 font-bold">•</span>
-                          <span>Time limits and memory limits apply to each problem</span>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h2 className="text-xl font-bold text-white mb-4">💡 Tips for Success</h2>
-                    <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-6">
-                      <ul className="space-y-3 text-gray-300">
-                        <li className="flex items-start gap-3">
-                          <span className="text-yellow-400">✓</span>
-                          <span>Read problem statements carefully and understand all constraints</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <span className="text-yellow-400">✓</span>
-                          <span>Start with easier problems to build momentum</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <span className="text-yellow-400">✓</span>
-                          <span>Test your code with sample inputs before submitting</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <span className="text-yellow-400">✓</span>
-                          <span>Consider edge cases and corner scenarios</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <span className="text-yellow-400">✓</span>
-                          <span>Optimize your solution if getting Time Limit Exceeded</span>
+                        <li className="flex items-start gap-2">
+                          <span className="text-primary font-bold">•</span>
+                          <span>Time & memory limits apply to each problem</span>
                         </li>
                       </ul>
                     </div>
                   </div>
                 </div>
 
+                {/* Tips - Collapsible/compact */}
+                <div className="mb-4">
+                  <h2 className="text-base font-bold text-foreground mb-2">💡 Tips for Success</h2>
+                  <div className="bg-secondary/30 border border-border rounded-lg p-4">
+                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-1.5 text-sm text-foreground/80">
+                      <li className="flex items-start gap-2">
+                        <span className="text-yellow-400">✓</span>
+                        <span>Read problem statements carefully</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-yellow-400">✓</span>
+                        <span>Start with easier problems first</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-yellow-400">✓</span>
+                        <span>Test with sample inputs before submitting</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-yellow-400">✓</span>
+                        <span>Consider edge cases and constraints</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
                 {/* Start Button */}
                 <div className="text-center">
-                  <div className="flex items-center justify-center gap-4">
+                  <div className="flex items-center justify-center gap-3">
                     {contest.status === 'live' ? (
                       <button
                         onClick={handleStartContest}
-                        className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg font-bold rounded-xl shadow-lg shadow-purple-600/30 hover:shadow-purple-600/50 transition-all transform hover:scale-105"
+                        className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-primary to-accent hover:brightness-110 text-primary-foreground text-base font-bold rounded-xl shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all transform hover:scale-105 btn-glow"
                       >
-                        <Play className="h-6 w-6" />
+                        <Play className="h-5 w-5" />
                         Start Contest
                       </button>
                     ) : contest.status === 'upcoming' ? (
@@ -898,12 +892,12 @@ export default function ContestPage() {
                           <Clock className="h-5 w-5" />
                           <span className="font-medium">Contest hasn&apos;t started yet</span>
                         </div>
-                        <p className="text-gray-400 mt-3">Come back at {new Date(contest.startTime).toLocaleString()}</p>
+                        <p className="text-muted-foreground mt-3">Come back at {new Date(contest.startTime).toLocaleString()}</p>
                       </div>
                     ) : (
                       <button
                         onClick={handleStartContest}
-                        className="inline-flex items-center gap-3 px-8 py-4 bg-gray-700 hover:bg-gray-600 text-white text-lg font-bold rounded-xl transition-all"
+                        className="inline-flex items-center gap-3 px-6 py-3 bg-secondary hover:bg-muted text-foreground text-base font-bold rounded-xl transition-all"
                       >
                         View Results & Solutions
                       </button>
@@ -913,7 +907,7 @@ export default function ContestPage() {
                     {currentUser && contest.creatorId === currentUser.userId && (
                       <button
                         onClick={() => router.push(`/contest/${contestId}/moderate`)}
-                        className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-lg font-bold rounded-xl shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 transition-all transform hover:scale-105"
+                        className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-primary to-accent hover:brightness-110 text-primary-foreground text-base font-bold rounded-xl shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all transform hover:scale-105 btn-glow"
                       >
                         <Shield className="h-6 w-6" />
                         Moderation Panel
@@ -930,9 +924,9 @@ export default function ContestPage() {
             {activeTab === 'problems' ? (
               <div className="flex-1 flex">
                 {/* Left Sidebar - Problem List */}
-                <div className="w-64 border-r border-gray-800 bg-gray-900 overflow-y-auto">
+                <div className="w-64 border-r border-border bg-card overflow-y-auto">
                   <div className="p-4">
-                    <h3 className="text-sm font-semibold text-gray-400 uppercase mb-3">Problems</h3>
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-3">Problems</h3>
                     <div className="space-y-2">
                       {problems.map((problem, index) => (
                         <button
@@ -940,8 +934,8 @@ export default function ContestPage() {
                           onClick={() => handleProblemSelect(problem)}
                           className={`w-full text-left p-3 rounded-lg transition-all ${
                             selectedProblem?.id === problem.id
-                              ? 'bg-purple-600 text-white'
-                              : 'bg-gray-800/50 text-gray-300 hover:bg-gray-800'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-secondary/50 text-foreground/80 hover:bg-secondary'
                           }`}
                         >
                           <div className="flex items-center justify-between mb-1">
@@ -964,7 +958,7 @@ export default function ContestPage() {
                             }`}>
                               {problem.difficulty}
                             </span>
-                            <span className="text-gray-500">{problem.points} pts</span>
+                            <span className="text-muted-foreground">{problem.points} pts</span>
                           </div>
                         </button>
                       ))}
@@ -976,21 +970,21 @@ export default function ContestPage() {
                 {selectedProblem ? (
                   <div className="flex-1 flex">
                     {/* Problem Statement Panel */}
-                    <div className="flex-1 flex flex-col border-r border-gray-800">
+                    <div className="flex-1 flex flex-col border-r border-border">
                       {/* Tabs */}
-                      <div className="flex items-center gap-1 px-4 py-3 border-b border-gray-800 bg-gray-900">
-                        <button className="px-4 py-2 text-sm font-medium bg-gray-800 text-white rounded-lg">
+                      <div className="flex items-center gap-1 px-4 py-3 border-b border-border bg-card">
+                        <button className="px-4 py-2 text-sm font-medium bg-secondary text-foreground rounded-lg">
                           Statement
                         </button>
-                        <button className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-lg">
+                        <button className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-lg">
                           Submissions
                         </button>
                       </div>
 
                       {/* Problem Content */}
-                      <div className="flex-1 overflow-y-auto p-6 bg-gray-900">
+                      <div className="flex-1 overflow-y-auto p-6 bg-card">
                         <div className="max-w-4xl">
-                          <h1 className="text-3xl font-bold text-white mb-4">{selectedProblem.title}</h1>
+                          <h1 className="text-3xl font-bold text-foreground mb-4">{selectedProblem.title}</h1>
                           
                           <div className="flex items-center gap-3 mb-6">
                             <span className={`px-3 py-1 text-sm font-medium rounded-lg ${
@@ -1000,55 +994,55 @@ export default function ContestPage() {
                             }`}>
                               {selectedProblem.difficulty}
                             </span>
-                            <span className="text-gray-400">•</span>
-                            <span className="text-gray-400">{selectedProblem.points} points</span>
-                            <span className="text-gray-400">•</span>
-                            <span className="text-gray-400">Time: {selectedProblem.timeLimit}s</span>
-                            <span className="text-gray-400">•</span>
-                            <span className="text-gray-400">Memory: {selectedProblem.memoryLimit}MB</span>
-                            <span className="text-gray-400">•</span>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="text-muted-foreground">{selectedProblem.points} points</span>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="text-muted-foreground">Time: {selectedProblem.timeLimit}s</span>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="text-muted-foreground">Memory: {selectedProblem.memoryLimit}MB</span>
+                            <span className="text-muted-foreground">•</span>
                             <span className="text-blue-400 font-medium">{selectedProblem.testCases.length} Test Cases</span>
                           </div>
 
                           <div className="prose prose-invert max-w-none">
-                            <div className="text-gray-300 text-base leading-relaxed whitespace-pre-wrap mb-8">
+                            <div className="text-foreground/80 text-base leading-relaxed whitespace-pre-wrap mb-8">
                               {selectedProblem.description}
                             </div>
 
                             <div className="mb-8">
-                              <h2 className="text-xl font-bold text-white mb-4">Input</h2>
-                              <div className="text-gray-300 text-base">
+                              <h2 className="text-xl font-bold text-foreground mb-4">Input</h2>
+                              <div className="text-foreground/80 text-base">
                                 See problem description for input format details.
                               </div>
                             </div>
 
                             <div className="mb-8">
-                              <h2 className="text-xl font-bold text-white mb-4">Output</h2>
-                              <div className="text-gray-300 text-base">
+                              <h2 className="text-xl font-bold text-foreground mb-4">Output</h2>
+                              <div className="text-foreground/80 text-base">
                                 See problem description for output format details.
                               </div>
                             </div>
 
                             <div className="mb-8">
-                              <h2 className="text-xl font-bold text-white mb-4">Example</h2>
+                              <h2 className="text-xl font-bold text-foreground mb-4">Example</h2>
                               {selectedProblem.examples.map((example, idx) => (
                                 <div key={idx} className="mb-6">
                                   <div className="mb-3">
-                                    <div className="text-sm font-semibold text-gray-400 mb-2">Input:</div>
-                                    <pre className="bg-gray-800 border border-gray-700 rounded-lg p-4 text-white font-mono text-sm overflow-x-auto">
+                                    <div className="text-sm font-semibold text-muted-foreground mb-2">Input:</div>
+                                    <pre className="bg-secondary border border-border rounded-lg p-4 text-foreground font-mono text-sm overflow-x-auto">
                                       {example.input}
                                     </pre>
                                   </div>
                                   <div className="mb-3">
-                                    <div className="text-sm font-semibold text-gray-400 mb-2">Output:</div>
-                                    <pre className="bg-gray-800 border border-gray-700 rounded-lg p-4 text-white font-mono text-sm overflow-x-auto">
+                                    <div className="text-sm font-semibold text-muted-foreground mb-2">Output:</div>
+                                    <pre className="bg-secondary border border-border rounded-lg p-4 text-foreground font-mono text-sm overflow-x-auto">
                                       {example.output}
                                     </pre>
                                   </div>
                                   {example.explanation && (
                                     <div>
-                                      <div className="text-sm font-semibold text-gray-400 mb-2">Explanation:</div>
-                                      <div className="text-gray-300 text-base">{example.explanation}</div>
+                                      <div className="text-sm font-semibold text-muted-foreground mb-2">Explanation:</div>
+                                      <div className="text-foreground/80 text-base">{example.explanation}</div>
                                     </div>
                                   )}
                                 </div>
@@ -1056,8 +1050,8 @@ export default function ContestPage() {
                             </div>
 
                             <div className="mb-8">
-                              <h2 className="text-xl font-bold text-white mb-4">Constraints</h2>
-                              <ul className="list-disc list-inside text-gray-300 space-y-2 text-base">
+                              <h2 className="text-xl font-bold text-foreground mb-4">Constraints</h2>
+                              <ul className="list-disc list-inside text-foreground/80 space-y-2 text-base">
                                 {selectedProblem.constraints.map((constraint, idx) => (
                                   <li key={idx} className="font-mono text-sm">{constraint}</li>
                                 ))}
@@ -1069,14 +1063,14 @@ export default function ContestPage() {
                     </div>
 
                     {/* Code Editor Panel */}
-                    <div className="w-1/2 flex flex-col bg-gray-950">
+                    <div className="w-1/2 flex flex-col bg-background">
                       {/* Editor Header */}
-                      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900">
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
                         <div className="flex items-center gap-2">
                           <select
                             value={language}
                             onChange={(e) => setLanguage(e.target.value)}
-                            className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm font-medium focus:outline-none focus:border-purple-500"
+                            className="px-3 py-1.5 bg-secondary border border-border rounded-lg text-foreground text-sm font-medium focus:outline-none focus:border-primary"
                           >
                             <option value="python">Python3</option>
                             <option value="javascript">JavaScript</option>
@@ -1089,7 +1083,7 @@ export default function ContestPage() {
                           <button
                             onClick={handleRunCode}
                             disabled={isTerminated || isRunning || !code.trim()}
-                            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white text-sm font-semibold rounded-lg transition-all flex items-center gap-2"
+                            className="px-4 py-2 bg-secondary hover:bg-muted disabled:bg-secondary disabled:text-muted-foreground text-foreground text-sm font-semibold rounded-lg transition-all flex items-center gap-2"
                           >
                             <Play className="h-4 w-4" />
                             {isRunning ? 'Running...' : 'Run Code'}
@@ -1097,7 +1091,7 @@ export default function ContestPage() {
                           <button
                             onClick={handleSubmit}
                             disabled={isTerminated || isSubmitting || !code.trim() || contest.status !== 'live' || (selectedProblem && submittedProblems.has(selectedProblem.id))}
-                            className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-semibold rounded-lg transition-all flex items-center gap-2"
+                            className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-secondary disabled:text-muted-foreground text-white text-sm font-semibold rounded-lg transition-all flex items-center gap-2"
                           >
                             <CheckCircle2 className="h-4 w-4" />
                             {selectedProblem && submittedProblems.has(selectedProblem.id) ? 'Submitted' : (isSubmitting ? 'Submitting...' : 'Submit')}
@@ -1133,28 +1127,28 @@ export default function ContestPage() {
                                 </p>
                                 {submitResult.testsPassed !== undefined && (
                                   <div className="mt-2 space-y-1">
-                                    <p className="text-sm text-gray-300">
+                                    <p className="text-sm text-foreground/80">
                                       <span className="font-semibold">Test Cases: </span>
                                       <span className={submitResult.testsPassed === submitResult.totalTests ? 'text-green-400' : 'text-yellow-400'}>
                                         {submitResult.testsPassed}/{submitResult.totalTests} Passed
                                       </span>
                                     </p>
                                     {submitResult.points !== undefined && (
-                                      <p className="text-sm text-gray-300">
+                                      <p className="text-sm text-foreground/80">
                                         <span className="font-semibold">Points Earned: </span>
                                         <span className="text-blue-400">+{submitResult.points}</span>
                                       </p>
                                     )}
                                     {submitResult.executionTime !== undefined && (
-                                      <p className="text-sm text-gray-300">
+                                      <p className="text-sm text-foreground/80">
                                         <span className="font-semibold">Execution Time: </span>
-                                        <span className="text-purple-400">{submitResult.executionTime.toFixed(2)}ms</span>
+                                        <span className="text-primary">{submitResult.executionTime.toFixed(2)}ms</span>
                                       </p>
                                     )}
                                   </div>
                                 )}
                                 {submitResult.message && (
-                                  <p className="text-sm text-gray-400 mt-1">
+                                  <p className="text-sm text-muted-foreground mt-1">
                                     {submitResult.message}
                                   </p>
                                 )}
@@ -1164,8 +1158,8 @@ export default function ContestPage() {
                           
                           {/* Individual Test Case Results (Pass/Fail only) */}
                           {submitResult.testResults && submitResult.testResults.length > 0 && (
-                            <div className="px-4 py-3 border-t border-gray-700/50 max-h-40 overflow-y-auto">
-                              <p className="text-xs font-semibold text-gray-400 uppercase mb-2">Test Case Details:</p>
+                            <div className="px-4 py-3 border-t border-border/50 max-h-40 overflow-y-auto">
+                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Test Case Details:</p>
                               <div className="space-y-1.5">
                                 {submitResult.testResults.map((testResult: any, index: number) => (
                                   <div 
@@ -1195,23 +1189,23 @@ export default function ContestPage() {
                           <textarea
                             value={code}
                             onChange={(e) => setCode(e.target.value)}
-                            className="w-full h-full p-4 bg-gray-950 text-white font-mono text-sm resize-none focus:outline-none"
+                            className="w-full h-full p-4 bg-background text-foreground font-mono text-sm resize-none focus:outline-none"
                             placeholder="// Write your code here..."
                             spellCheck={false}
                           />
                         </div>
 
                         {/* Input/Output Panels */}
-                        <div className="h-48 flex border-t border-gray-800">
+                        <div className="h-48 flex border-t border-border">
                           {/* Input Panel */}
-                          <div className="flex-1 flex flex-col border-r border-gray-800">
-                            <div className="px-4 py-2 bg-gray-900 border-b border-gray-800 text-sm font-semibold text-gray-400">
+                          <div className="flex-1 flex flex-col border-r border-border">
+                            <div className="px-4 py-2 bg-card border-b border-border text-sm font-semibold text-muted-foreground">
                               Input
                             </div>
                             <textarea
                               value={customInput}
                               onChange={(e) => setCustomInput(e.target.value)}
-                              className="flex-1 p-3 bg-gray-950 text-white font-mono text-sm resize-none focus:outline-none"
+                              className="flex-1 p-3 bg-background text-foreground font-mono text-sm resize-none focus:outline-none"
                               placeholder="Enter custom input here..."
                               spellCheck={false}
                             />
@@ -1219,17 +1213,17 @@ export default function ContestPage() {
 
                           {/* Output Panel */}
                           <div className="flex-1 flex flex-col">
-                            <div className="px-4 py-2 bg-gray-900 border-b border-gray-800 text-sm font-semibold text-gray-400">
+                            <div className="px-4 py-2 bg-card border-b border-border text-sm font-semibold text-muted-foreground">
                               Output
                             </div>
-                            <div className="flex-1 p-3 bg-gray-950 text-white font-mono text-sm overflow-y-auto whitespace-pre-wrap">
+                            <div className="flex-1 p-3 bg-background text-foreground font-mono text-sm overflow-y-auto whitespace-pre-wrap">
                               {isRunning ? (
-                                <div className="flex items-center gap-2 text-gray-400">
-                                  <div className="animate-spin h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full"></div>
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
                                   Running...
                                 </div>
                               ) : (
-                                output || <span className="text-gray-600">Output will appear here...</span>
+                                output || <span className="text-muted-foreground/50">Output will appear here...</span>
                               )}
                             </div>
                           </div>
@@ -1237,7 +1231,7 @@ export default function ContestPage() {
                       </div>
 
                       {/* Footer Info */}
-                      <div className="px-4 py-2 border-t border-gray-800 bg-gray-900 text-xs text-gray-500">
+                      <div className="px-4 py-2 border-t border-border bg-card text-xs text-muted-foreground">
                         <div className="flex items-center justify-between">
                           <span>Time Limit: {selectedProblem.timeLimit}s • Memory Limit: {selectedProblem.memoryLimit}MB</span>
                           <span>{contest.status === 'live' ? getTimeRemaining() : 'Contest Ended'}</span>
@@ -1246,10 +1240,10 @@ export default function ContestPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex-1 flex items-center justify-center bg-gray-900">
+                  <div className="flex-1 flex items-center justify-center bg-card">
                     <div className="text-center">
-                      <Trophy className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-                      <p className="text-gray-400 text-lg">Select a problem to start solving</p>
+                      <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground text-lg">Select a problem to start solving</p>
                     </div>
                   </div>
                 )}
@@ -1259,48 +1253,48 @@ export default function ContestPage() {
               <div className="max-w-4xl mx-auto">
                 <div className="flex items-center gap-3 mb-6">
                   <Trophy className="h-8 w-8 text-yellow-400" />
-                  <h2 className="text-2xl font-bold text-white">Leaderboard</h2>
+                  <h2 className="text-2xl font-bold text-foreground">Leaderboard</h2>
                 </div>
 
                 {/* Show results only if published */}
                 {!contest?.resultsPublished ? (
-                  <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
+                  <div className="bg-card border border-border rounded-xl p-12 text-center">
                     <AlertCircle className="h-16 w-16 text-yellow-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-white mb-2">Results Pending</h3>
-                    <p className="text-gray-400 mb-4">
+                    <h3 className="text-xl font-bold text-foreground mb-2">Results Pending</h3>
+                    <p className="text-muted-foreground mb-4">
                       The contest has ended. Results will be published by the moderator after reviewing all submissions.
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground/70">
                       Check back later to see your ranking and scores.
                     </p>
                   </div>
                 ) : (
                   <>
-                    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                    <div className="bg-card border border-border rounded-xl overflow-hidden">
                       <table className="w-full">
-                        <thead className="bg-gray-800">
+                        <thead className="bg-secondary">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Rank</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Username</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Test Cases</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Time (ms)</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Solved</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Rank</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Username</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Test Cases</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Time (ms)</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Solved</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-800">
+                        <tbody className="divide-y divide-border">
                           {leaderboard.map((participant, index) => (
-                            <tr key={participant.userId} className={index < 3 ? 'bg-gray-800/50' : ''}>
+                            <tr key={participant.userId} className={index < 3 ? 'bg-secondary/50' : ''}>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <span className={`font-bold ${
                                   index === 0 ? 'text-yellow-400' :
-                                  index === 1 ? 'text-gray-300' :
+                                  index === 1 ? 'text-foreground/80' :
                                   index === 2 ? 'text-orange-400' :
-                                  'text-gray-400'
+                                  'text-muted-foreground'
                                 }`}>
                                   {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : ''} #{index + 1}
                                 </span>
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-white font-medium">
+                              <td className="px-6 py-4 whitespace-nowrap text-foreground font-medium">
                                 {participant.username}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-green-400 font-semibold">
@@ -1309,7 +1303,7 @@ export default function ContestPage() {
                               <td className="px-6 py-4 whitespace-nowrap text-blue-400 font-mono text-sm">
                                 {(participant.totalExecutionTime || 0).toFixed(0)}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-gray-400">
+                              <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">
                                 {participant.problemsSolved || 0}/{problems.length}
                               </td>
                             </tr>
@@ -1318,27 +1312,27 @@ export default function ContestPage() {
                       </table>
 
                       {leaderboard.length === 0 && (
-                        <div className="text-center py-12 text-gray-400">
+                        <div className="text-center py-12 text-muted-foreground">
                           No submissions yet
                         </div>
                       )}
                     </div>
 
                     {/* Ranking Explanation */}
-                    <div className="mt-6 bg-gray-800/30 border border-gray-700 rounded-xl p-6">
-                      <h3 className="text-lg font-bold text-white mb-3">🏆 How Rankings Work</h3>
-                      <ul className="space-y-2 text-gray-300 text-sm">
+                    <div className="mt-6 bg-secondary/30 border border-border rounded-xl p-6">
+                      <h3 className="text-lg font-bold text-foreground mb-3">🏆 How Rankings Work</h3>
+                      <ul className="space-y-2 text-foreground/80 text-sm">
                         <li className="flex items-start gap-2">
                           <span className="text-green-400">1.</span>
-                          <span><strong className="text-white">Test Cases Passed:</strong> More test cases = Higher rank (partial credit awarded)</span>
+                          <span><strong className="text-foreground">Test Cases Passed:</strong> More test cases = Higher rank (partial credit awarded)</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <span className="text-blue-400">2.</span>
-                          <span><strong className="text-white">Execution Time:</strong> If tied on test cases, faster solutions rank higher</span>
+                          <span><strong className="text-foreground">Execution Time:</strong> If tied on test cases, faster solutions rank higher</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="text-purple-400">3.</span>
-                          <span><strong className="text-white">Problems Solved:</strong> If still tied, more fully solved problems rank higher</span>
+                          <span className="text-primary">3.</span>
+                          <span><strong className="text-foreground">Problems Solved:</strong> If still tied, more fully solved problems rank higher</span>
                         </li>
                       </ul>
                     </div>

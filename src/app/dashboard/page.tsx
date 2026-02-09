@@ -22,7 +22,7 @@ function DashboardContent() {
   }, [searchParams]);
 
   return (
-    <div className="flex h-screen bg-gray-950 overflow-hidden">
+    <div className="flex h-screen bg-background overflow-hidden">
       {/* Sidebar */}
       <Sidebar activeView={activeView} onViewChange={setActiveView} />
 
@@ -42,8 +42,8 @@ function DashboardContent() {
 export default function DashboardPage() {
   return (
     <Suspense fallback={
-      <div className="flex h-screen bg-gray-950 items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="flex h-screen bg-background items-center justify-center">
+        <div className="text-foreground">Loading...</div>
       </div>
     }>
       <DashboardContent />

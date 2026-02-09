@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 
 const Editor = dynamic(() => import('@monaco-editor/react'), {
   ssr: false,
-  loading: () => <div className="flex items-center justify-center h-full text-gray-400">Loading Editor...</div>
+  loading: () => <div className="flex items-center justify-center h-full text-muted-foreground">Loading Editor...</div>
 });
 
 declare const monaco: any;
@@ -92,14 +92,14 @@ export default function CodeEditor() {
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 p-4">
+      <div className="bg-card border-b border-border p-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white">Code Compiler</h1>
+          <h1 className="text-2xl font-bold text-foreground">Code Compiler</h1>
           <div className="flex items-center gap-4">
             <select
               value={language}
               onChange={(e) => handleLanguageChange(e.target.value as Language)}
-              className="bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500"
+              className="bg-secondary text-foreground px-4 py-2 rounded-lg border border-border focus:outline-none focus:border-primary"
             >
               {languageOptions.map((lang) => (
                 <option key={lang.value} value={lang.value}>
@@ -110,7 +110,7 @@ export default function CodeEditor() {
             <button
               onClick={handleRunCode}
               disabled={isLoading}
-              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+              className="bg-green-600 hover:bg-green-700 disabled:bg-secondary disabled:text-muted-foreground text-white px-6 py-2 rounded-lg font-semibold transition-colors"
             >
               {isLoading ? 'Running...' : 'Run Code'}
             </button>
@@ -122,8 +122,8 @@ export default function CodeEditor() {
       <div className="flex flex-1 overflow-hidden">
         {/* Code Editor */}
         <div className="flex-1 flex flex-col">
-          <div className="bg-gray-800 px-4 py-2 border-b border-gray-700">
-            <h2 className="text-sm font-semibold text-gray-300">Code Editor</h2>
+          <div className="bg-card px-4 py-2 border-b border-border">
+            <h2 className="text-sm font-semibold text-foreground/80">Code Editor</h2>
           </div>
           <div className="flex-1">
             <Editor
@@ -182,26 +182,26 @@ export default function CodeEditor() {
         </div>
 
         {/* Input/Output Panel */}
-        <div className="w-96 flex flex-col border-l border-gray-700">
+        <div className="w-96 flex flex-col border-l border-border">
           {/* Input Section */}
-          <div className="flex-1 flex flex-col border-b border-gray-700">
-            <div className="bg-gray-800 px-4 py-2 border-b border-gray-700">
-              <h2 className="text-sm font-semibold text-gray-300">Input</h2>
+          <div className="flex-1 flex flex-col border-b border-border">
+            <div className="bg-card px-4 py-2 border-b border-border">
+              <h2 className="text-sm font-semibold text-foreground/80">Input</h2>
             </div>
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Enter input here..."
-              className="flex-1 bg-gray-900 text-white p-4 resize-none focus:outline-none font-mono text-sm"
+              className="flex-1 bg-background text-foreground p-4 resize-none focus:outline-none font-mono text-sm"
             />
           </div>
 
           {/* Output Section */}
           <div className="flex-1 flex flex-col">
-            <div className="bg-gray-800 px-4 py-2 border-b border-gray-700">
-              <h2 className="text-sm font-semibold text-gray-300">Output</h2>
+            <div className="bg-card px-4 py-2 border-b border-border">
+              <h2 className="text-sm font-semibold text-foreground/80">Output</h2>
             </div>
-            <pre className="flex-1 bg-gray-900 text-white p-4 overflow-auto font-mono text-sm whitespace-pre-wrap">
+            <pre className="flex-1 bg-background text-foreground p-4 overflow-auto font-mono text-sm whitespace-pre-wrap">
               {output || 'Output will appear here...'}
             </pre>
           </div>

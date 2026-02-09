@@ -60,13 +60,13 @@ export default function JoinContestModal({ isOpen, onClose, onSuccess }: JoinCon
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-xl max-w-md w-full shadow-2xl">
+      <div className="bg-card border border-border rounded-xl max-w-md w-full shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
-          <h2 className="text-xl font-bold text-white">Join Private Contest</h2>
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <h2 className="text-xl font-bold text-foreground">Join Private Contest</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -75,28 +75,28 @@ export default function JoinContestModal({ isOpen, onClose, onSuccess }: JoinCon
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive text-sm">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground/80 mb-2">
               Enter Join Code
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <input
                 type="text"
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                className="w-full pl-11 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white font-mono text-lg tracking-wider focus:outline-none focus:border-purple-500 transition-colors uppercase"
+                className="w-full pl-11 pr-4 py-3 bg-secondary border border-border rounded-lg text-foreground font-mono text-lg tracking-wider focus:outline-none focus:border-primary transition-colors uppercase"
                 placeholder="XXXXXXXX"
                 maxLength={8}
                 required
               />
             </div>
-            <p className="mt-2 text-xs text-gray-400">
+            <p className="mt-2 text-xs text-muted-foreground">
               Enter the 8-character code provided by the contest creator
             </p>
           </div>
@@ -105,14 +105,14 @@ export default function JoinContestModal({ isOpen, onClose, onSuccess }: JoinCon
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-700 hover:bg-gray-800 text-white rounded-lg transition-colors"
+              className="flex-1 px-4 py-2 border border-border hover:bg-secondary text-foreground rounded-lg transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+              className="flex-1 px-4 py-2 bg-primary hover:brightness-110 disabled:opacity-50 text-primary-foreground rounded-lg font-medium transition-all btn-glow"
             >
               {isLoading ? 'Joining...' : 'Join Contest'}
             </button>
