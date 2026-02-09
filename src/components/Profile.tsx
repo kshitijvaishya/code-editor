@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Mail, User, Shield, Calendar, Code2, Clock, LogOut, Loader2 } from 'lucide-react';
 
 interface UserData {
-  id: string;
+  userId: string;
+  id?: string;
   username: string;
   email: string;
   createdAt: string;
+  codeRuns: number;
 }
 
 export default function Profile() {
@@ -52,11 +54,19 @@ export default function Profile() {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long'
-    });
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date';
+      }
+      return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return 'Invalid Date';
+    }
   };
 
   if (loading) {
@@ -103,7 +113,7 @@ export default function Profile() {
                 </div>
                 <div className="mb-4">
                   <h2 className="text-3xl font-bold text-foreground">{userData.username}</h2>
-                  <p className="text-primary font-medium">Developer</p>
+                  
                 </div>
               </div>
             </div>
@@ -122,14 +132,6 @@ export default function Profile() {
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Email</p>
                     <p className="text-foreground font-medium">{userData.email}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-4 bg-secondary/50 rounded-lg border border-border">
-                  <Shield className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Role</p>
-                    <p className="text-foreground font-medium">Developer</p>
                   </div>
                 </div>
 
@@ -153,16 +155,7 @@ export default function Profile() {
                   <Clock className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Code Runs</p>
-                    <p className="text-foreground font-medium text-2xl">0</p>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-secondary/50 rounded-lg border border-border">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">Languages Used</p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1 bg-muted text-muted-foreground border border-border rounded-full text-sm">
-                      Start coding to see stats
-                    </span>
+                    <p className="text-foreground font-medium text-2xl">{userData.codeRuns || 0}</p>
                   </div>
                 </div>
               </div>

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { userDb } from '@/lib/userDb';
 
 type Language = 'c' | 'cpp' | 'python' | 'java' | 'javascript';
 
@@ -83,6 +85,16 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Language and code are required' },
         { status: 400 }
       );
+    }
+
+    // Track code runs for authenticated users
+    const currentUser = await getCurrentUser(request);
+    if (currentUser) {
+      try {
+        await userDb.incrementCodeRuns(currentUser.userId);
+      } catch (error) {
+        console.error('Failed to increment code runs:', error);
+      }
     }
 
     const langConfig = languageMap[language];

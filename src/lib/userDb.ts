@@ -6,6 +6,7 @@ export interface User {
   email: string;
   password: string; // hashed
   createdAt: string;
+  codeRuns?: number;
 }
 
 export interface UserResponse {
@@ -13,6 +14,7 @@ export interface UserResponse {
   username: string;
   email: string;
   createdAt: string;
+  codeRuns: number;
 }
 
 class UserDatabase {
@@ -32,6 +34,7 @@ class UserDatabase {
       email: email.toLowerCase(),
       password, // Should be hashed
       createdAt: new Date().toISOString(),
+      codeRuns: 0,
     };
 
     await collection.insertOne(user as any);
@@ -41,6 +44,7 @@ class UserDatabase {
       username: user.username,
       email: user.email,
       createdAt: user.createdAt,
+      codeRuns: user.codeRuns || 0,
     };
   }
 
@@ -60,7 +64,16 @@ class UserDatabase {
       username: user.username,
       email: user.email,
       createdAt: user.createdAt,
+      codeRuns: user.codeRuns || 0,
     };
+  }
+
+  async incrementCodeRuns(userId: string): Promise<void> {
+    const collection = await this.getUsersCollection();
+    await collection.updateOne(
+      { id: userId },
+      { $inc: { codeRuns: 1 } }
+    );
   }
 
   async emailExists(email: string): Promise<boolean> {

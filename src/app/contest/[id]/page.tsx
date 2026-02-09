@@ -662,7 +662,7 @@ export default function ContestPage() {
         {/* Enhanced Header with Real-time Timer */}
         {hasStarted && (
           <div className="bg-card border-b border-border p-4">
-            <div className="flex items-center justify-between">
+            <div className="grid grid-cols-3 items-center gap-4">
               <div className="flex items-center gap-6">
                 <div>
                   <h1 className="text-xl font-bold text-foreground">{contest.name}</h1>
@@ -683,8 +683,10 @@ export default function ContestPage() {
                     </span>
                   </div>
                 </div>
+              </div>
 
-                {/* Real-time Countdown Timer */}
+              {/* Real-time Countdown Timer - Centered */}
+              <div className="flex items-center justify-center">
                 <div className="flex items-center gap-3 bg-secondary/50 border border-border rounded-xl px-6 py-3">
                   <Clock className={`h-5 w-5 ${timeRemaining < 300000 ? 'text-red-400 animate-pulse' : 'text-yellow-400'}`} />
                   <div>
@@ -698,7 +700,7 @@ export default function ContestPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-end gap-3">
                 {/* Tab Navigation */}
                 <div className="flex gap-2">
                   <button
@@ -1006,9 +1008,6 @@ export default function ContestPage() {
                             </div>
                           </div>
                           <div className="text-sm font-medium mb-1">{problem.title}</div>
-                          <div className="flex items-center gap-2 text-xs">
-                            <span className="text-muted-foreground">{problem.points} pts</span>
-                          </div>
                         </button>
                       ))}
                     </div>
