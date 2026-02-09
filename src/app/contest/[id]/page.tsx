@@ -825,14 +825,10 @@ export default function ContestPage() {
                 </div>
 
                 {/* Contest Stats - Compact row */}
-                <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="bg-secondary/50 border border-border rounded-lg p-3 text-center">
                     <div className="text-2xl font-bold text-primary">{problems.length}</div>
                     <div className="text-xs text-muted-foreground">Problems</div>
-                  </div>
-                  <div className="bg-secondary/50 border border-border rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-yellow-400">{getTotalPoints()}</div>
-                    <div className="text-xs text-muted-foreground">Total Points</div>
                   </div>
                   <div className="bg-secondary/50 border border-border rounded-lg p-3 text-center">
                     <div className="text-2xl font-bold text-green-400">{contest.participants.length}</div>
@@ -898,10 +894,6 @@ export default function ContestPage() {
                         <li className="flex items-start gap-2">
                           <span className="text-primary font-bold">•</span>
                           <span>Score based on problems solved & points earned</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-primary font-bold">•</span>
-                          <span>Time & memory limits apply to each problem</span>
                         </li>
                       </ul>
                     </div>
@@ -1060,19 +1052,23 @@ export default function ContestPage() {
                               {selectedProblem.description}
                             </div>
 
-                            <div className="mb-8">
-                              <h2 className="text-xl font-bold text-foreground mb-4">Input</h2>
-                              <div className="text-foreground/80 text-base">
-                                See problem description for input format details.
+                            {selectedProblem.inputFormat && (
+                              <div className="mb-8">
+                                <h2 className="text-xl font-bold text-foreground mb-4">Input</h2>
+                                <div className="text-foreground/80 text-base leading-relaxed">
+                                  {selectedProblem.inputFormat}
+                                </div>
                               </div>
-                            </div>
+                            )}
 
-                            <div className="mb-8">
-                              <h2 className="text-xl font-bold text-foreground mb-4">Output</h2>
-                              <div className="text-foreground/80 text-base">
-                                See problem description for output format details.
+                            {selectedProblem.outputFormat && (
+                              <div className="mb-8">
+                                <h2 className="text-xl font-bold text-foreground mb-4">Output</h2>
+                                <div className="text-foreground/80 text-base leading-relaxed">
+                                  {selectedProblem.outputFormat}
+                                </div>
                               </div>
-                            </div>
+                            )}
 
                             <div className="mb-8">
                               <h2 className="text-xl font-bold text-foreground mb-4">Example</h2>

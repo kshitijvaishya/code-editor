@@ -1,0 +1,146 @@
+MOVIE THEATER SEATING ARRANGEMENT - TEST CASES
+
+==============================================
+TEST CASE 1 (VISIBLE) - Basic Examples
+==============================================
+Input:
+3
+1
+1
+2
+11
+3
+101
+
+Output:
+Yes
+No
+Yes
+
+Explanation:
+- n=1, s="1": Single person seated, optimal
+- n=2, s="11": Two adjacent people, violates rule
+- n=3, s="101": Alternating pattern, optimal
+
+==============================================
+TEST CASE 2 (VISIBLE) - Edge Cases with Two Seats
+==============================================
+Input:
+4
+2
+10
+2
+01
+2
+11
+2
+00
+
+Output:
+Yes
+Yes
+No
+No
+
+Explanation:
+- n=2, s="10": Valid pattern
+- n=2, s="01": Valid pattern (reversed)
+- n=2, s="11": Adjacent people, violates rule
+- n=2, s="00": Empty, not optimal (could seat 1 person)
+
+==============================================
+TEST CASE 3 (HIDDEN) - Valid Alternating Patterns
+==============================================
+Input:
+5
+4
+1010
+5
+10101
+6
+101010
+7
+1010101
+9
+101010101
+
+Output:
+Yes
+Yes
+Yes
+Yes
+Yes
+
+Explanation:
+All are optimal alternating patterns with no adjacent people.
+
+==============================================
+TEST CASE 4 (HIDDEN) - Adjacent Violations
+==============================================
+Input:
+4
+3
+110
+3
+011
+4
+1011
+5
+11010
+
+Output:
+No
+No
+No
+No
+
+Explanation:
+- n=3, s="110": Adjacent at start
+- n=3, s="011": Adjacent at end
+- n=4, s="1011": Adjacent at end
+- n=5, s="11010": Adjacent at start
+
+==============================================
+TEST CASE 5 (HIDDEN) - Non-Optimal Gaps
+==============================================
+Input:
+5
+1
+0
+3
+010
+4
+1001
+5
+10001
+6
+100001
+
+Output:
+No
+No
+No
+No
+No
+
+Explanation:
+- n=1, s="0": Empty seat, could seat 1 person
+- n=3, s="010": Only 1 person, could seat 2 (101)
+- n=4, s="1001": Gap in middle, could seat 2 people (1010)
+- n=5, s="10001": Large gap, could seat 3 people (10101)
+- n=6, s="100001": Large gap, could seat 3 people (101010)
+
+==============================================
+SUMMARY
+==============================================
+Total Test Cases: 5
+- Visible: 2
+- Hidden: 3
+Total Individual Tests: 21
+
+Coverage:
+✓ Edge cases (n=1, n=2)
+✓ Valid patterns (101, 1010, 10101...)
+✓ Adjacent violations (11, 110, 011, 1011)
+✓ Non-optimal gaps (0, 010, 1001, 10001)
+✓ Various lengths (1 to 9 seats)

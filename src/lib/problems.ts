@@ -14,6 +14,8 @@ export interface Problem {
   difficulty: ProblemDifficulty;
   topics: ProblemTopic[];
   description: string;
+  inputFormat?: string;
+  outputFormat?: string;
   constraints: string[];
   examples: {
     input: string;
@@ -50,49 +52,42 @@ export const DSA_PROBLEMS: Problem[] = [
     title: 'Movie Theater Seating Arrangement',
     difficulty: 'Easy',
     topics: ['Arrays', 'Strings'],
-    description: `We all know that why social distance needed in Covid and therefore in Movie theater there are n seats where people can seat. This seating arrangement is called a good arrangement if:
+    description: `We all know that why social distancing needed in Covid and therefore in Movie theater there are n seats where people can seat. This seating arrangement is called a good arrangement if:
 
 1. No one can seat adjacent to any person.
 2. It isn't possible to seat for any person.
 
 This seating arrangement can be represented as a binary string. If a place is filled it can be represented by 1 and 0 otherwise. Find if the given arrangement is good or not. Print 'Yes' if arrangement is good otherwise 'No'.`,
+    inputFormat: 'First line represent t number of testcase. next line of each test case represents n (Number of places). next line contains string s representing corresponding arrangement of testcases.',
+    outputFormat: 'For each test case print \'Yes\' or \'No\'.',
     constraints: [
       '1 <= t <= 1000',
-      '1 <= n <= 10000',
-      's consists of only 0s and 1s'
+      '1 <= n <= 10000'
     ],
     examples: [
       {
-        input: '5\n10101',
-        output: 'Yes',
-        explanation: 'No two people (1s) are adjacent, and all available spots are filled optimally.'
-      },
-      {
-        input: '2\n11',
-        output: 'No',
-        explanation: 'Two people are seated adjacently, violating the social distancing rule.'
+        input: '2\n5\n10101\n2\n11',
+        output: 'Yes\nNo',
+        explanation: 'Test case 1: No two people (1s) are adjacent - Valid arrangement.\nTest case 2: Two people are seated adjacently - Invalid arrangement.'
       }
     ],
     testCases: [
-      { input: '5\n10101', expectedOutput: 'Yes' },
-      { input: '2\n11', expectedOutput: 'No' },
-      { input: '3\n101', expectedOutput: 'Yes' },
-      { input: '4\n1010', expectedOutput: 'Yes', isHidden: true },
-      { input: '6\n101010', expectedOutput: 'Yes', isHidden: true },
-      { input: '7\n1010101', expectedOutput: 'Yes', isHidden: true },
-      { input: '3\n110', expectedOutput: 'No', isHidden: true },
-      { input: '1\n1', expectedOutput: 'Yes', isHidden: true }
+      { input: '3\n1\n1\n2\n11\n3\n101', expectedOutput: 'Yes\nNo\nYes' },
+      { input: '4\n2\n10\n2\n01\n2\n11\n2\n00', expectedOutput: 'Yes\nYes\nNo\nNo' },
+      { input: '5\n4\n1010\n5\n10101\n6\n101010\n7\n1010101\n9\n101010101', expectedOutput: 'Yes\nYes\nYes\nYes\nYes', isHidden: true },
+      { input: '4\n3\n110\n3\n011\n4\n1011\n5\n11010', expectedOutput: 'No\nNo\nNo\nNo', isHidden: true },
+      { input: '5\n1\n0\n3\n010\n4\n1001\n5\n10001\n6\n100001', expectedOutput: 'No\nNo\nNo\nNo\nNo', isHidden: true }
     ],
     timeLimit: 2,
     memoryLimit: 256,
-    points: 100
+    points: 200
   },
   {
     id: 'credit-card-validation',
     title: 'Validating Credit Card Numbers',
     difficulty: 'Medium',
     topics: ['Strings'],
-    description: `You and Fredrick are good friends. Yesterday, Fredrick received credit cards from ABCD Bank. He wants to verify whether his credit card numbers are valid or not. You happen to be great at regex so he is asking for your help!
+    description: `You and Fredrick are good friends. Yesterday, Fredrick received N credit cards from ABCD Bank. He wants to verify whether his credit card numbers are valid or not. You happen to be great at regex so he is asking for your help!
 
 A valid credit card from ABCD Bank has the following characteristics:
 
@@ -102,35 +97,24 @@ A valid credit card from ABCD Bank has the following characteristics:
 ► It may have digits in groups of 4, separated by one hyphen "-".
 ► It must NOT use any other separator like ' ', '_', etc.
 ► It must NOT have 4 or more consecutive repeated digits.`,
+    inputFormat: 'The first line of input contains an integer N.\nThe next N lines contain credit card numbers.',
+    outputFormat: 'Print \'Valid\' if the credit card number is valid. Otherwise, print \'Invalid\'. Do not print the quotes.',
     constraints: [
-      '0 < N < 100',
-      'Each line contains a potential credit card number'
+      '0 < N < 100'
     ],
     examples: [
       {
-        input: '4123456789123456',
-        output: 'Valid'
-      },
-      {
-        input: '5123-4567-8912-3456',
-        output: 'Valid'
-      },
-      {
-        input: '61234-567-8912-3456',
-        output: 'Invalid',
-        explanation: 'Card number is not divided into equal groups of 4'
-      },
-      {
-        input: '5133-3367-8912-3456',
-        output: 'Invalid',
-        explanation: 'Consecutive digits 3333 is repeating 4 times'
+        input: '6\n4123456789123456\n5123-4567-8912-3456\n61234-567-8912-3456\n4123356789123456\n5133-3367-8912-3456\n5123 - 3567 - 8912 - 3456',
+        output: 'Valid\nValid\nInvalid\nValid\nInvalid\nInvalid',
+        explanation: '4123456789123456 : Valid\n5123-4567-8912-3456 : Valid\n61234-567-8912-3456 : Invalid, because the card number is not divided into equal groups of 4.\n4123356789123456 : Valid\n5133-3367-8912-3456 : Invalid, consecutive digits 3333 is repeating 4 times.\n5123 - 4567 - 8912 - 3456 : Invalid, because space \' \' and - are used as separators.'
       }
     ],
     testCases: [
+      { input: '6\n4123456789123456\n5123-4567-8912-3456\n61234-567-8912-3456\n4123356789123456\n5133-3367-8912-3456\n5123 - 3567 - 8912 - 3456', expectedOutput: 'Valid\nValid\nInvalid\nValid\nInvalid\nInvalid' },
       { input: '5\n7165863385679329\n6175824393389297\n5252248277877418\n9563584181869815\n5179123424576876', expectedOutput: 'Invalid\nValid\nValid\nInvalid\nValid', isHidden: true },
       { input: '6\n3695-7963-915827-75\n3143-4672-8798-2968-2968\n6444-4444-4444-4918\n6865396515642918\n6865396515642\n4695-7963-9778-2775', expectedOutput: 'Invalid\nInvalid\nInvalid\nValid\nInvalid\nValid', isHidden: true },
-      { input: '5\n7165863385679329\n6175824393389297\n5252248277877418\n9563584181869815\n5179123424576876', expectedOutput: 'Invalid\nValid\nValid\nInvalid\nValid', isHidden: true },
-      { input: '4\n3695-7963-  5827-75\n4143-4672-8798-2968-2968\n6865---------------3965---------------1564-------------2918\n6865396515642918', expectedOutput: 'Invalid\nInvalid\nInvalid\nValid', isHidden: true }
+      { input: '4\n3695-7963-  5827-75\n4143-4672-8798-2968-2968\n6865---------------3965---------------1564-------------2918\n6865396515642918', expectedOutput: 'Invalid\nInvalid\nInvalid\nValid', isHidden: true },
+      { input: '3\n4253625879615786\n4424424424442444\n5122-2368-7954-3214', expectedOutput: 'Valid\nInvalid\nValid', isHidden: true }
     ],
     timeLimit: 2,
     memoryLimit: 256,
