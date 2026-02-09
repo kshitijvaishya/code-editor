@@ -122,23 +122,10 @@ export default function ContestPage() {
     if (!hasStarted || !contest) return;
 
     const handleVisibilityChange = () => {
-      // Don't trigger violation during legitimate submission
+      // IMMEDIATE TERMINATION - Tab switching causes instant contest termination
+      // Don't terminate during legitimate submission
       if (document.hidden && hasStarted && !isSubmittingLegit) {
-        // Clear any existing timeout
-        if (violationTimeoutRef.current.visibilityTimeout) {
-          clearTimeout(violationTimeoutRef.current.visibilityTimeout);
-        }
-        // Debounce: wait 1 second before triggering violation
-        violationTimeoutRef.current.visibilityTimeout = setTimeout(() => {
-          if (document.hidden && hasStarted && !isSubmittingLegit) {
-            handleViolation('Tab switching detected');
-          }
-        }, 1000);
-      } else {
-        // User returned to tab, cancel violation
-        if (violationTimeoutRef.current.visibilityTimeout) {
-          clearTimeout(violationTimeoutRef.current.visibilityTimeout);
-        }
+        handleAutoSubmit('Tab/Window switching detected - Contest terminated immediately');
       }
     };
 
@@ -167,10 +154,6 @@ export default function ContestPage() {
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
       document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
       document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
-      // Clear timeouts on cleanup
-      if (violationTimeoutRef.current.visibilityTimeout) {
-        clearTimeout(violationTimeoutRef.current.visibilityTimeout);
-      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasStarted, contest]);
