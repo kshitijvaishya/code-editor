@@ -118,19 +118,19 @@ export default function CreateContestModal({ isOpen, onClose, onSuccess }: Creat
       case 'Easy': return 'text-green-400 bg-green-500/10 border-green-500/30';
       case 'Medium': return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30';
       case 'Hard': return 'text-red-400 bg-red-500/10 border-red-500/30';
-      default: return 'text-gray-400 bg-gray-500/10 border-gray-500/30';
+      default: return 'text-muted-foreground bg-muted/50 border-border';
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-xl max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-card border border-border rounded-xl max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-800 sticky top-0 bg-gray-900 z-10">
-          <h2 className="text-xl font-bold text-white">Create DSA Contest</h2>
+        <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-card z-10">
+          <h2 className="text-xl font-bold text-foreground">Create DSA Contest</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -139,35 +139,35 @@ export default function CreateContestModal({ isOpen, onClose, onSuccess }: Creat
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive text-sm">
               {error}
             </div>
           )}
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground/80 mb-2">
                 Contest Name *
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
+                className="w-full px-4 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:border-primary transition-colors"
                 placeholder="e.g., DSA Weekly Challenge #1"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground/80 mb-2">
                 Description
               </label>
               <input
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
+                className="w-full px-4 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:border-primary transition-colors"
                 placeholder="Optional description"
               />
             </div>
@@ -175,27 +175,27 @@ export default function CreateContestModal({ isOpen, onClose, onSuccess }: Creat
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground/80 mb-2">
                 Start Time *
               </label>
               <input
                 type="datetime-local"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
+                className="w-full px-4 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:border-primary transition-colors"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground/80 mb-2">
                 End Time *
               </label>
               <input
                 type="datetime-local"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
+                className="w-full px-4 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:border-primary transition-colors"
                 required
               />
             </div>
@@ -204,7 +204,7 @@ export default function CreateContestModal({ isOpen, onClose, onSuccess }: Creat
           {/* Problem Selection */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-gray-300">
+              <label className="text-sm font-medium text-foreground/80">
                 Problems * ({selectedProblems.length} selected)
               </label>
               <div className="flex gap-2">
@@ -240,26 +240,26 @@ export default function CreateContestModal({ isOpen, onClose, onSuccess }: Creat
                   onClick={() => toggleProblem(problem.id)}
                   className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                     selectedProblems.includes(problem.id)
-                      ? 'border-purple-500 bg-purple-500/10'
-                      : 'border-gray-700 bg-gray-800 hover:border-gray-600'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border bg-secondary hover:border-muted-foreground'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <h4 className="font-medium text-white text-sm">{problem.title}</h4>
+                    <h4 className="font-medium text-foreground text-sm">{problem.title}</h4>
                     <input
                       type="checkbox"
                       checked={selectedProblems.includes(problem.id)}
                       onChange={() => {}}
-                      className="mt-0.5 accent-purple-600"
+                      className="mt-0.5 accent-primary"
                     />
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-xs px-2 py-0.5 rounded border ${getDifficultyColor(problem.difficulty)}`}>
                       {problem.difficulty}
                     </span>
-                    <span className="text-xs text-gray-400">{problem.points} pts</span>
+                    <span className="text-xs text-muted-foreground">{problem.points} pts</span>
                     {problem.topics.slice(0, 2).map(topic => (
-                      <span key={topic} className="text-xs text-gray-500">
+                      <span key={topic} className="text-xs text-muted-foreground/70">
                         {topic}
                       </span>
                     ))}
@@ -273,14 +273,14 @@ export default function CreateContestModal({ isOpen, onClose, onSuccess }: Creat
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-700 hover:bg-gray-800 text-white rounded-lg transition-colors"
+              className="flex-1 px-4 py-2 border border-border hover:bg-secondary text-foreground rounded-lg transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+              className="flex-1 px-4 py-2 bg-primary hover:brightness-110 disabled:opacity-50 text-primary-foreground rounded-lg font-medium transition-all btn-glow"
             >
               {isLoading ? 'Creating...' : 'Create Contest'}
             </button>

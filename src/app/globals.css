@@ -1,16 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+@layer base {
+  :root {
+    --background: 220 20% 4%;
+    --foreground: 180 10% 90%;
+
+    --card: 210 25% 8%;
+    --card-foreground: 180 10% 90%;
+
+    --primary: 174 72% 46%;
+    --primary-foreground: 220 20% 4%;
+
+    --secondary: 210 30% 12%;
+    --secondary-foreground: 180 10% 90%;
+
+    --muted: 215 20% 14%;
+    --muted-foreground: 215 15% 55%;
+
+    --accent: 174 72% 46%;
+    --accent-foreground: 220 20% 4%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 210 30% 18%;
+    --input: 210 30% 18%;
+    --ring: 174 72% 46%;
+
+    --radius: 0.75rem;
+  }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Orbitron', sans-serif;
+  }
+}
+
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 20px hsl(174 72% 46% / 0.6), 0 0 40px hsl(174 72% 46% / 0.3);
+  }
+  .box-glow {
+    box-shadow: 0 0 15px hsl(174 72% 46% / 0.15), 0 0 30px hsl(174 72% 46% / 0.08), inset 0 1px 0 hsl(174 72% 46% / 0.1);
+  }
+  .btn-glow {
+    box-shadow: 0 0 15px hsl(174 72% 46% / 0.4), 0 0 30px hsl(174 72% 46% / 0.2);
+  }
+}
+
+/* Starfield animation */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
 }
 
 /* Disable text selection and copy-paste */

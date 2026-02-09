@@ -15,7 +15,7 @@ export default function EditorPage() {
 
   return (
     <main 
-      className="min-h-screen bg-gray-900 select-none"
+      className="min-h-screen bg-background select-none"
       onCopy={preventCopyPaste}
       onCut={preventCopyPaste}
       onPaste={preventCopyPaste}

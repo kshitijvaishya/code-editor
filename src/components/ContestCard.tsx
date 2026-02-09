@@ -24,7 +24,7 @@ export default function ContestCard({ contest, isCreator, userRank, userScore, h
   const getStatusColor = () => {
     // If user has submitted (completed the contest), show completed status
     if (!isCreator && hasSubmitted && contest.status === 'live') {
-      return 'bg-purple-500/10 border-purple-500/30 text-purple-400';
+      return 'bg-primary/10 border-primary/30 text-primary';
     }
     
     switch (contest.status) {
@@ -33,7 +33,7 @@ export default function ContestCard({ contest, isCreator, userRank, userScore, h
       case 'live':
         return 'bg-green-500/10 border-green-500/30 text-green-400';
       case 'ended':
-        return 'bg-gray-500/10 border-gray-500/30 text-gray-400';
+        return 'bg-muted/50 border-border text-muted-foreground';
     }
   };
 
@@ -89,28 +89,28 @@ export default function ContestCard({ contest, isCreator, userRank, userScore, h
   };
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-purple-600/30 transition-all relative">
+    <div className="bg-card border border-border rounded-xl p-6 hover:border-primary/30 transition-all relative">
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="absolute inset-0 bg-gray-950/95 backdrop-blur-sm z-10 rounded-xl flex items-center justify-center p-6">
+        <div className="absolute inset-0 bg-background/95 backdrop-blur-sm z-10 rounded-xl flex items-center justify-center p-6">
           <div className="text-center">
-            <Trash2 className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-white mb-2">Delete Contest?</h3>
-            <p className="text-sm text-gray-400 mb-6">
+            <Trash2 className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-foreground mb-2">Delete Contest?</h3>
+            <p className="text-sm text-muted-foreground mb-6">
               This action cannot be undone. All submissions and data will be permanently deleted.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={isDeleting}
-                className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-secondary hover:bg-muted text-foreground rounded-lg font-medium transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-destructive hover:brightness-110 text-destructive-foreground rounded-lg font-medium transition-colors disabled:opacity-50"
               >
                 {isDeleting ? 'Deleting...' : 'Delete'}
               </button>
@@ -123,11 +123,11 @@ export default function ContestCard({ contest, isCreator, userRank, userScore, h
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-start justify-between">
-            <h3 className="text-lg font-bold text-white mb-1">{contest.name}</h3>
+            <h3 className="text-lg font-bold text-foreground mb-1">{contest.name}</h3>
             {isCreator && (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="p-1.5 hover:bg-red-600/20 text-red-400 rounded-lg transition-colors ml-2"
+                className="p-1.5 hover:bg-destructive/20 text-destructive rounded-lg transition-colors ml-2"
                 title="Delete contest"
               >
                 <Trash2 className="h-4 w-4" />
@@ -135,11 +135,11 @@ export default function ContestCard({ contest, isCreator, userRank, userScore, h
             )}
           </div>
           {contest.description && (
-            <p className="text-sm text-gray-400 mb-2">{contest.description}</p>
+            <p className="text-sm text-muted-foreground mb-2">{contest.description}</p>
           )}
           <div className="flex items-center gap-2 flex-wrap">
             {isCreator && (
-              <span className="inline-block px-2 py-1 text-xs font-medium bg-purple-600/20 text-purple-300 border border-purple-500/30 rounded">
+              <span className="inline-block px-2 py-1 text-xs font-medium bg-primary/20 text-primary border border-primary/30 rounded">
                 Creator
               </span>
             )}
@@ -160,15 +160,15 @@ export default function ContestCard({ contest, isCreator, userRank, userScore, h
 
       {/* Details */}
       <div className="space-y-3 mb-4">
-        <div className="flex items-center gap-2 text-sm text-gray-400">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="h-4 w-4" />
           <span>Starts: {formatDateTime(contest.startTime)}</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-400">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Clock className="h-4 w-4" />
           <span>Duration: {formatDuration(contest.startTime, contest.endTime)}</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-400">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Users className="h-4 w-4" />
           <span>
             {contest.participants.length} participant{contest.participants.length !== 1 ? 's' : ''}
@@ -176,7 +176,7 @@ export default function ContestCard({ contest, isCreator, userRank, userScore, h
           </span>
         </div>
         {contest.problemIds && contest.problemIds.length > 0 && (
-          <div className="flex items-center gap-2 text-sm text-gray-400">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Code2 className="h-4 w-4" />
             <span>{contest.problemIds.length} problems</span>
           </div>
@@ -185,23 +185,23 @@ export default function ContestCard({ contest, isCreator, userRank, userScore, h
 
       {/* Join Code (Only for Creator and Upcoming/Live) */}
       {isCreator && contest.status !== 'ended' && (
-        <div className="mt-4 p-3 bg-gray-800/50 border border-gray-700 rounded-lg">
+        <div className="mt-4 p-3 bg-secondary/50 border border-border rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-400 mb-1">Join Code</p>
-              <p className="text-lg font-mono font-bold text-white tracking-wider">
+              <p className="text-xs text-muted-foreground mb-1">Join Code</p>
+              <p className="text-lg font-mono font-bold text-foreground tracking-wider">
                 {contest.joinCode}
               </p>
             </div>
             <button
               onClick={handleCopyCode}
-              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
               title="Copy join code"
             >
               {copied ? (
                 <Check className="h-5 w-5 text-green-400" />
               ) : (
-                <Copy className="h-5 w-5 text-gray-400" />
+                <Copy className="h-5 w-5 text-muted-foreground" />
               )}
             </button>
           </div>
@@ -220,7 +220,7 @@ export default function ContestCard({ contest, isCreator, userRank, userScore, h
       {contest.status === 'live' && hasSubmitted && !isCreator && (
         <button 
           onClick={handleEnterContest}
-          className="w-full mt-4 px-4 py-2 border border-purple-600 bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 rounded-lg font-medium transition-colors"
+          className="w-full mt-4 px-4 py-2 border border-primary bg-primary/10 hover:bg-primary/20 text-primary rounded-lg font-medium transition-colors"
         >
           View Submissions & Leaderboard
         </button>
@@ -228,7 +228,7 @@ export default function ContestCard({ contest, isCreator, userRank, userScore, h
       {contest.status === 'upcoming' && (
         <button 
           onClick={handleEnterContest}
-          className="w-full mt-4 px-4 py-2 border border-gray-700 hover:bg-gray-800 text-white rounded-lg font-medium transition-colors"
+          className="w-full mt-4 px-4 py-2 border border-border hover:bg-secondary text-foreground rounded-lg font-medium transition-colors"
         >
           View Contest
         </button>
@@ -236,7 +236,7 @@ export default function ContestCard({ contest, isCreator, userRank, userScore, h
       {contest.status === 'ended' && isCreator && (
         <button
           onClick={handleModerationPanel}
-          className="flex items-center justify-center gap-2 w-full mt-4 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+          className="flex items-center justify-center gap-2 w-full mt-4 px-4 py-2 bg-primary hover:brightness-110 text-primary-foreground rounded-lg font-medium transition-all btn-glow"
           title="Moderation Panel"
         >
           <Shield className="h-4 w-4" />
