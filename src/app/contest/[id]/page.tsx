@@ -45,10 +45,9 @@ export default function ContestPage() {
   // Track submitted problems and their test results
   const [submittedProblems, setSubmittedProblems] = useState<Set<string>>(new Set());
   const [problemTestResults, setProblemTestResults] = useState<{[problemId: string]: any}>({});
-  // Flag to prevent violation detection during legitimate submissions
-  const [isSubmittingLegit, setIsSubmittingLegit] = useState(false);
-  // Ref for debouncing violation detection (only for tab visibility)
-  const violationTimeoutRef = useRef<{visibilityTimeout?: NodeJS.Timeout}>({});
+  // Flag to track if contest has been terminated (prevents any further actions)
+  const [isTerminated, setIsTerminated] = useState(false);
+  const terminationInProgressRef = useRef(false);
 
 
   useEffect(() => {
@@ -56,6 +55,14 @@ export default function ContestPage() {
     loadContestData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contestId]);
+
+  // Redirect immediately if contest is terminated
+  useEffect(() => {
+    if (isTerminated) {
+      // Use replace to prevent going back
+      router.replace('/dashboard/contests/private');
+    }
+  }, [isTerminated, router]);
 
   const loadCurrentUser = async () => {
     try {
@@ -107,7 +114,7 @@ export default function ContestPage() {
       setTimeRemaining(Math.max(0, diff));
 
       if (diff <= 0) {
-        handleAutoSubmit('Contest time ended');
+        terminateContest('Contest time ended');
       }
     };
 
@@ -119,13 +126,14 @@ export default function ContestPage() {
 
   // Fullscreen and tab switching detection
   useEffect(() => {
-    if (!hasStarted || !contest) return;
+    if (!hasStarted || !contest || isTerminated) return;
 
     const handleVisibilityChange = () => {
-      // IMMEDIATE TERMINATION - Tab switching causes instant contest termination
-      // Don't terminate during legitimate submission
-      if (document.hidden && hasStarted && !isSubmittingLegit) {
-        handleAutoSubmit('Tab/Window switching detected - Contest terminated immediately');
+      // IMMEDIATE TERMINATION - No exceptions, no delays
+      // document.hidden is true when user switches tabs or minimizes window
+      if (document.hidden && !terminationInProgressRef.current) {
+        terminationInProgressRef.current = true;
+        terminateContest('Tab switching or Alt+Tab detected');
       }
     };
 
@@ -136,17 +144,19 @@ export default function ContestPage() {
                           (document as any).mozFullScreenElement || 
                           (document as any).msFullscreenElement;
       
-      // IMMEDIATE DISQUALIFICATION - No warnings, instant contest termination
-      if (!isFullscreen && hasStarted) {
-        handleAutoSubmit('Exited fullscreen mode - Contest terminated immediately');
+      // IMMEDIATE TERMINATION - Exiting fullscreen not allowed
+      if (!isFullscreen && !terminationInProgressRef.current) {
+        terminationInProgressRef.current = true;
+        terminateContest('Exited fullscreen mode');
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange); // Safari
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange); // Firefox
-    document.addEventListener('MSFullscreenChange', handleFullscreenChange); // IE11
+    // Using passive: false to ensure events are captured
+    document.addEventListener('visibilitychange', handleVisibilityChange, { passive: false });
+    document.addEventListener('fullscreenchange', handleFullscreenChange, { passive: false });
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange, { passive: false });
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange, { passive: false });
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange, { passive: false });
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -156,7 +166,7 @@ export default function ContestPage() {
       document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasStarted, contest]);
+  }, [hasStarted, contest, isTerminated]);
 
   const loadContestData = async () => {
     try {
@@ -221,6 +231,13 @@ export default function ContestPage() {
   };
 
   const handleSubmit = async () => {
+    // Prevent submission if contest is terminated
+    if (isTerminated || terminationInProgressRef.current) {
+      alert('Contest has been terminated. No submissions allowed.');
+      router.push('/dashboard/contests/private');
+      return;
+    }
+
     if (!selectedProblem || !contest) return;
 
     // Check if already submitted for this problem
@@ -229,8 +246,6 @@ export default function ContestPage() {
       return;
     }
 
-    // Set flag to prevent violation detection during submission
-    setIsSubmittingLegit(true);
     setIsSubmitting(true);
     setSubmitResult(null);
 
@@ -303,12 +318,17 @@ export default function ContestPage() {
       setSubmitResult({ status: 'Error', message: 'Failed to submit solution' });
     } finally {
       setIsSubmitting(false);
-      // Re-enable violation detection after submission completes
-      setTimeout(() => setIsSubmittingLegit(false), 3000);
     }
   };
 
   const handleRunCode = async () => {
+    // Prevent running code if contest is terminated
+    if (isTerminated || terminationInProgressRef.current) {
+      alert('Contest has been terminated. No actions allowed.');
+      router.push('/dashboard/contests/private');
+      return;
+    }
+
     if (!code.trim()) return;
 
     setIsRunning(true);
@@ -431,6 +451,26 @@ export default function ContestPage() {
     alert(`Contest terminated!\n\n${reason}\n\nYour submission has been recorded.`);
   };
 
+  const terminateContest = (reason: string) => {
+    if (!contest || terminationInProgressRef.current) return;
+
+    // Set termination flag IMMEDIATELY to block all interactions
+    terminationInProgressRef.current = true;
+    setIsTerminated(true);
+    setHasStarted(false);
+
+    // Exit fullscreen synchronously (don't await)
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+
+    // Show alert FIRST, then redirect after user acknowledges
+    alert(`🚨 Your contest has been terminated!\n\nReason: ${reason}\n\nYou will be redirected to the dashboard.`);
+    
+    // Redirect after alert is closed
+    router.replace('/dashboard/contests/private');
+  };
+
   const enterFullscreen = async () => {
     try {
       const elem = document.documentElement;
@@ -539,6 +579,19 @@ export default function ContestPage() {
           <div className="text-center">
             <p className="text-gray-400">Contest not found</p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Block all interactions if terminated
+  if (isTerminated) {
+    return (
+      <div className="flex h-screen bg-gray-950 items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-red-400 text-xl font-semibold">Contest Terminated</p>
+          <p className="text-gray-400 mt-2">Redirecting to dashboard...</p>
         </div>
       </div>
     );
@@ -1035,7 +1088,7 @@ export default function ContestPage() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={handleRunCode}
-                            disabled={isRunning || !code.trim()}
+                            disabled={isTerminated || isRunning || !code.trim()}
                             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white text-sm font-semibold rounded-lg transition-all flex items-center gap-2"
                           >
                             <Play className="h-4 w-4" />
@@ -1043,7 +1096,7 @@ export default function ContestPage() {
                           </button>
                           <button
                             onClick={handleSubmit}
-                            disabled={isSubmitting || !code.trim() || contest.status !== 'live' || (selectedProblem && submittedProblems.has(selectedProblem.id))}
+                            disabled={isTerminated || isSubmitting || !code.trim() || contest.status !== 'live' || (selectedProblem && submittedProblems.has(selectedProblem.id))}
                             className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-semibold rounded-lg transition-all flex items-center gap-2"
                           >
                             <CheckCircle2 className="h-4 w-4" />
