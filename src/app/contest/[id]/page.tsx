@@ -11,7 +11,7 @@ const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
 });
 import { Contest } from '@/lib/contest';
 import { Problem, getProblemById } from '@/lib/problems';
-import { Play, Trophy, Users, Clock, CheckCircle2, XCircle, AlertCircle, ArrowLeft, Shield } from 'lucide-react';
+import { Play, Trophy, Users, Clock, CheckCircle2, XCircle, AlertCircle, ArrowLeft, Shield, ShieldAlert, Clipboard, Ban } from 'lucide-react';
 
 interface Submission {
   id: string;
@@ -45,7 +45,6 @@ export default function ContestPage() {
   const [showInstructions, setShowInstructions] = useState(true);
   const [showFullscreenWarning, setShowFullscreenWarning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
-  const [warningCount, setWarningCount] = useState(0);
   const [customInput, setCustomInput] = useState('');
   const [output, setOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
@@ -55,6 +54,14 @@ export default function ContestPage() {
   // Flag to track if contest has been terminated (prevents any further actions)
   const [isTerminated, setIsTerminated] = useState(false);
   const terminationInProgressRef = useRef(false);
+  // Anti-cheat violation tracking
+  const [violationCount, setViolationCount] = useState(0);
+  const [showViolationWarning, setShowViolationWarning] = useState(false);
+  const [lastViolationType, setLastViolationType] = useState('');
+  const violationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // DevTools detection
+  const [showDevToolsBlocker, setShowDevToolsBlocker] = useState(false);
+  const devToolsCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Resizable panels
   const [splitPosition, setSplitPosition] = useState(50); // percentage for statement panel
@@ -161,6 +168,242 @@ export default function ContestPage() {
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contest, hasStarted]);
+
+  // DevTools detection utility
+  const isDevToolsOpen = (): boolean => {
+    // Method 1: Window size difference (detects docked DevTools)
+    const widthThreshold = window.outerWidth - window.innerWidth > 160;
+    const heightThreshold = window.outerHeight - window.innerHeight > 160;
+    if (widthThreshold || heightThreshold) return true;
+
+    // Method 2: Firebug detection
+    if ((window as any).Firebug && (window as any).Firebug.chrome && (window as any).Firebug.chrome.isInitialized) return true;
+
+    return false;
+  };
+
+  // Continuous DevTools monitoring during contest
+  useEffect(() => {
+    if (!hasStarted || !contest || isTerminated) return;
+
+    const checkDevTools = () => {
+      if (isTerminated || terminationInProgressRef.current) return;
+
+      if (isDevToolsOpen()) {
+        // Trigger a violation for DevTools being open
+        setViolationCount(prev => {
+          const newCount = prev + 1;
+          setLastViolationType('devtools');
+          setShowViolationWarning(true);
+
+          if (violationTimeoutRef.current) {
+            clearTimeout(violationTimeoutRef.current);
+          }
+
+          // Record to server
+          fetch('/api/contests/violations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contestId: contest.id,
+              type: 'devtools',
+              details: 'Developer Tools detected open during contest',
+            }),
+          }).catch(() => {});
+
+          if (newCount >= 3) {
+            setTimeout(() => {
+              terminateContest('Anti-cheat: 3 violations detected (Developer Tools open)');
+            }, 100);
+          } else {
+            violationTimeoutRef.current = setTimeout(() => {
+              setShowViolationWarning(false);
+            }, 5000);
+          }
+
+          return newCount;
+        });
+      }
+    };
+
+    // Check every 2 seconds
+    devToolsCheckIntervalRef.current = setInterval(checkDevTools, 2000);
+    // Also check immediately
+    checkDevTools();
+
+    return () => {
+      if (devToolsCheckIntervalRef.current) {
+        clearInterval(devToolsCheckIntervalRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasStarted, contest, isTerminated]);
+
+  // Anti-cheat: Copy/Paste/Cut detection
+  useEffect(() => {
+    if (!hasStarted || !contest || isTerminated) return;
+
+    const recordViolation = async (type: string, details: string) => {
+      try {
+        await fetch('/api/contests/violations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contestId: contest.id,
+            type,
+            details,
+          }),
+        });
+      } catch (error) {
+        console.error('Failed to record violation:', error);
+      }
+    };
+
+    const handleViolationEvent = (type: string, details: string) => {
+      if (isTerminated || terminationInProgressRef.current) return;
+
+      setViolationCount(prev => {
+        const newCount = prev + 1;
+        setLastViolationType(type);
+        setShowViolationWarning(true);
+
+        // Clear previous timeout
+        if (violationTimeoutRef.current) {
+          clearTimeout(violationTimeoutRef.current);
+        }
+
+        // Record violation to server
+        recordViolation(type, details);
+
+        if (newCount >= 3) {
+          // 3rd strike — terminate the contest
+          setTimeout(() => {
+            terminateContest(`Anti-cheat: 3 violations detected (${type})`);
+          }, 100);
+        } else {
+          // Auto-hide warning after 5 seconds
+          violationTimeoutRef.current = setTimeout(() => {
+            setShowViolationWarning(false);
+          }, 5000);
+        }
+
+        return newCount;
+      });
+    };
+
+    // Block paste events
+    const handlePaste = (e: ClipboardEvent) => {
+      e.preventDefault();
+      handleViolationEvent('paste', 'Attempted to paste content');
+    };
+
+    // Block copy events
+    const handleCopy = (e: ClipboardEvent) => {
+      e.preventDefault();
+      handleViolationEvent('copy', 'Attempted to copy content');
+    };
+
+    // Block cut events
+    const handleCut = (e: ClipboardEvent) => {
+      e.preventDefault();
+      handleViolationEvent('cut', 'Attempted to cut content');
+    };
+
+    // Block right-click context menu
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      // Don't count right-click as a violation, just block it
+    };
+
+    // Block keyboard shortcuts for copy/paste/cut and DevTools
+    const handleAntiCheatKeyDown = (e: KeyboardEvent) => {
+      if (isTerminated || terminationInProgressRef.current) return;
+
+      const isCtrl = e.ctrlKey || e.metaKey;
+
+      // Block DevTools shortcuts
+      if (e.key === 'F12') {
+        e.preventDefault();
+        e.stopPropagation();
+        handleViolationEvent('devtools', 'Pressed F12 to open Developer Tools');
+        return;
+      }
+      if (isCtrl && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleViolationEvent('devtools', 'Used Ctrl+Shift+I to open Developer Tools');
+        return;
+      }
+      if (isCtrl && e.shiftKey && (e.key === 'J' || e.key === 'j')) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleViolationEvent('devtools', 'Used Ctrl+Shift+J to open Console');
+        return;
+      }
+      if (isCtrl && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleViolationEvent('devtools', 'Used Ctrl+Shift+C to open Element Inspector');
+        return;
+      }
+      if (isCtrl && (e.key === 'u' || e.key === 'U')) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleViolationEvent('devtools', 'Used Ctrl+U to view page source');
+        return;
+      }
+
+      // Block copy/paste/cut shortcuts
+      if (isCtrl && e.key === 'v') {
+        e.preventDefault();
+        e.stopPropagation();
+        handleViolationEvent('paste', 'Used Ctrl+V keyboard shortcut');
+      } else if (isCtrl && e.key === 'c') {
+        e.preventDefault();
+        e.stopPropagation();
+        handleViolationEvent('copy', 'Used Ctrl+C keyboard shortcut');
+      } else if (isCtrl && e.key === 'x') {
+        e.preventDefault();
+        e.stopPropagation();
+        handleViolationEvent('cut', 'Used Ctrl+X keyboard shortcut');
+      } else if (isCtrl && e.key === 'a') {
+        // Allow select all in editor — not a cheating action
+      }
+    };
+
+    // Block drag and drop (another way to paste content)
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      handleViolationEvent('paste', 'Attempted to drag and drop content');
+    };
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    // Attach all event listeners
+    document.addEventListener('paste', handlePaste, true);
+    document.addEventListener('copy', handleCopy, true);
+    document.addEventListener('cut', handleCut, true);
+    document.addEventListener('contextmenu', handleContextMenu, true);
+    document.addEventListener('keydown', handleAntiCheatKeyDown, true);
+    document.addEventListener('drop', handleDrop, true);
+    document.addEventListener('dragover', handleDragOver, true);
+
+    return () => {
+      document.removeEventListener('paste', handlePaste, true);
+      document.removeEventListener('copy', handleCopy, true);
+      document.removeEventListener('cut', handleCut, true);
+      document.removeEventListener('contextmenu', handleContextMenu, true);
+      document.removeEventListener('keydown', handleAntiCheatKeyDown, true);
+      document.removeEventListener('drop', handleDrop, true);
+      document.removeEventListener('dragover', handleDragOver, true);
+      if (violationTimeoutRef.current) {
+        clearTimeout(violationTimeoutRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasStarted, contest, isTerminated]);
 
   // Fullscreen and tab switching detection
   useEffect(() => {
@@ -436,62 +679,6 @@ export default function ContestPage() {
     return userSubmissions.some(s => s.problemId === problemId && s.status === 'Accepted');
   };
 
-  const handleViolation = (reason: string) => {
-    const newWarningCount = warningCount + 1;
-    setWarningCount(newWarningCount);
-
-    if (newWarningCount >= 3) {
-      // Auto-submit after 3 violations
-      handleAutoSubmit(reason);
-    } else {
-      // Show warning alert
-      alert(`Warning ${newWarningCount}/3: ${reason}\n\nYou have ${3 - newWarningCount} warning(s) remaining before the contest is auto-submitted.`);
-    }
-  };
-
-  const handleAutoSubmit = async (reason: string) => {
-    if (!contest) return;
-
-    // Set flag to prevent multiple submissions
-    setHasStarted(false);
-
-    // Exit fullscreen if still in it
-    if (document.fullscreenElement) {
-      try {
-        await document.exitFullscreen();
-      } catch (error) {
-        console.error('Failed to exit fullscreen:', error);
-      }
-    }
-
-    // Always submit to mark contest as completed (even if no code)
-    const problemToSubmit = selectedProblem || problems[0];
-    const codeToSubmit = code.trim() || '// Contest terminated - no submission';
-    
-    if (problemToSubmit) {
-      try {
-        await fetch('/api/contests/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contestId: contest.id,
-            problemId: problemToSubmit.id,
-            code: codeToSubmit,
-            language,
-          }),
-        });
-      } catch (error) {
-        console.error('Auto-submit failed:', error);
-      }
-    }
-
-    // Reload contest data to show updated results
-    await loadContestData();
-    
-    // Show alert about termination
-    alert(`Contest terminated!\n\n${reason}\n\nYour submission has been recorded.`);
-  };
-
   const terminateContest = (reason: string) => {
     if (!contest || terminationInProgressRef.current) return;
 
@@ -547,11 +734,22 @@ export default function ContestPage() {
   };
 
   const handleStartContest = () => {
+    // Check if DevTools is open before allowing contest start
+    if (isDevToolsOpen()) {
+      setShowDevToolsBlocker(true);
+      return;
+    }
     setShowFullscreenWarning(true);
   };
 
   const confirmStartContest = async () => {
     setShowFullscreenWarning(false);
+    
+    // Double-check DevTools right before starting
+    if (isDevToolsOpen()) {
+      setShowDevToolsBlocker(true);
+      return;
+    }
     
     // Record that user has started the contest
     try {
@@ -728,12 +926,124 @@ export default function ContestPage() {
                   )}
                 </div>
 
+                {/* Violation Warning Counter */}
+                {violationCount > 0 && (
+                  <div className={`flex items-center gap-2 border rounded-lg px-4 py-2 ${
+                    violationCount >= 2 ? 'bg-red-500/20 border-red-500/50 animate-pulse' : 'bg-yellow-500/10 border-yellow-500/30'
+                  }`}>
+                    <ShieldAlert className={`h-4 w-4 ${violationCount >= 2 ? 'text-red-400' : 'text-yellow-400'}`} />
+                    <span className={`text-xs font-bold ${violationCount >= 2 ? 'text-red-400' : 'text-yellow-400'}`}>
+                      Warnings: {violationCount}/3
+                    </span>
+                  </div>
+                )}
+
                 {/* Warning: Fullscreen Lock Indicator */}
                 <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2">
                   <AlertCircle className="h-4 w-4 text-red-400" />
                   <span className="text-xs text-red-400 font-medium">Fullscreen Locked</span>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* DevTools Blocker Modal */}
+        {showDevToolsBlocker && (
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[70] flex items-center justify-center p-4">
+            <div className="bg-card border-2 border-red-500 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+              <div className="text-center mb-4">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/20 rounded-full mb-3">
+                  <ShieldAlert className="h-8 w-8 text-red-400" />
+                </div>
+                <h2 className="text-xl font-bold text-foreground">🔧 Developer Tools Detected!</h2>
+                <p className="text-muted-foreground text-sm mt-1">You must close Developer Tools before starting the contest.</p>
+              </div>
+
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-4">
+                <h3 className="text-sm font-bold text-red-400 mb-2">How to close Developer Tools:</h3>
+                <ul className="space-y-1.5 text-sm text-foreground/80">
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">1.</span>
+                    <span>Press <strong className="text-foreground">F12</strong> to toggle DevTools off</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">2.</span>
+                    <span>Or press <strong className="text-foreground">Ctrl + Shift + I</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">3.</span>
+                    <span>Or click the <strong className="text-foreground">X</strong> button on DevTools panel</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+                <p className="text-yellow-400 text-xs">
+                  <strong>⚠️ Note:</strong> Developer Tools are not allowed during contests. Opening them during the contest will count as a warning. 3 warnings = termination.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDevToolsBlocker(false)}
+                  className="flex-1 px-4 py-2.5 bg-secondary hover:bg-muted text-foreground font-semibold rounded-lg transition-all"
+                >
+                  Go Back
+                </button>
+                <button
+                  onClick={() => {
+                    if (isDevToolsOpen()) {
+                      alert('Developer Tools are still open! Please close them first.');
+                    } else {
+                      setShowDevToolsBlocker(false);
+                      setShowFullscreenWarning(true);
+                    }
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-lg transition-all transform hover:scale-105 shadow-lg"
+                >
+                  I&apos;ve Closed DevTools
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Anti-Cheat Violation Warning Popup */}
+        {showViolationWarning && !isTerminated && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] animate-bounce">
+            <div className={`flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl border-2 ${
+              violationCount >= 3
+                ? 'bg-red-900/95 border-red-500 text-red-100'
+                : violationCount >= 2
+                ? 'bg-red-800/95 border-red-400 text-red-100'
+                : 'bg-yellow-900/95 border-yellow-500 text-yellow-100'
+            }`}>
+              <ShieldAlert className={`h-6 w-6 flex-shrink-0 ${
+                violationCount >= 2 ? 'text-red-300 animate-pulse' : 'text-yellow-300'
+              }`} />
+              <div>
+                <div className="font-bold text-sm">
+                  {violationCount >= 3
+                    ? '🚨 CONTEST TERMINATED — 3 Violations!'
+                    : `⚠️ Warning ${violationCount}/3 — ${lastViolationType.charAt(0).toUpperCase() + lastViolationType.slice(1)} Detected!`
+                  }
+                </div>
+                <div className="text-xs opacity-80 mt-0.5">
+                  {violationCount >= 3
+                    ? 'Repeated violations detected. Contest has been terminated.'
+                    : `Violation detected! ${3 - violationCount} warning(s) remaining before termination.`
+                  }
+                </div>
+              </div>
+              {violationCount < 3 && (
+                <button
+                  onClick={() => setShowViolationWarning(false)}
+                  className="ml-2 text-sm font-bold px-2 py-1 rounded bg-white/10 hover:bg-white/20 transition-colors"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -777,8 +1087,16 @@ export default function ContestPage() {
                     <span><strong className="text-foreground">No Exits</strong> — exiting fullscreen terminates contest</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-400">📋</span>
-                    <span><strong className="text-foreground">Copy/Paste Disabled</strong> — won&apos;t terminate contest</span>
+                    <span className="text-red-400">📋</span>
+                    <span><strong className="text-foreground">No Copy/Paste/Cut</strong> — each attempt = 1 warning flag</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">�</span>
+                    <span><strong className="text-foreground">No Developer Tools</strong> — F12 / Ctrl+Shift+I flagged</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">�🚩</span>
+                    <span><strong className="text-foreground">3 Strikes Rule</strong> — 3 warnings = instant termination</span>
                   </li>
                 </ul>
               </div>
@@ -894,6 +1212,18 @@ export default function ContestPage() {
                         <li className="flex items-start gap-2">
                           <span className="text-primary font-bold">•</span>
                           <span>Score based on problems solved & points earned</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-400 font-bold">•</span>
+                          <span className="text-red-400/90"><strong>No copy/paste/cut</strong> — each attempt = 1 warning flag</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-400 font-bold">•</span>
+                          <span className="text-red-400/90"><strong>No Developer Tools</strong> — opening DevTools = 1 warning flag</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-400 font-bold">•</span>
+                          <span className="text-red-400/90"><strong>3 warnings = contest terminated</strong> immediately</span>
                         </li>
                       </ul>
                     </div>
@@ -1315,6 +1645,32 @@ export default function ContestPage() {
                               lineNumbersMinChars: 3,
                               glyphMargin: false,
                               overviewRulerBorder: false,
+                              // Anti-cheat: disable paste via drag-and-drop
+                              dropIntoEditor: { enabled: false },
+                            }}
+                            onMount={(editor) => {
+                              // Anti-cheat: Disable paste command in Monaco editor
+                              editor.addCommand(
+                                // @ts-ignore - Monaco KeyMod.CtrlCmd | KeyCode.KeyV
+                                2048 | 52, // CtrlCmd + V
+                                () => {
+                                  // Blocked - handled by document-level listener
+                                }
+                              );
+                              // Block Ctrl+C in editor
+                              editor.addCommand(
+                                2048 | 33, // CtrlCmd + C
+                                () => {
+                                  // Blocked - handled by document-level listener
+                                }
+                              );
+                              // Block Ctrl+X in editor
+                              editor.addCommand(
+                                2048 | 54, // CtrlCmd + X
+                                () => {
+                                  // Blocked - handled by document-level listener
+                                }
+                              );
                             }}
                           />
                         </div>
