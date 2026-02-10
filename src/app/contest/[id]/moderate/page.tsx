@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
-import { ArrowLeft, Users, Code, CheckCircle2, XCircle, Clock, Trophy, FileCode, ChevronDown, ChevronUp, ShieldAlert, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Users, Code, CheckCircle2, XCircle, Clock, Trophy, FileCode, ChevronDown, ChevronUp, ShieldAlert, AlertTriangle, Timer, Copy, Check } from 'lucide-react';
 
 interface Problem {
   id: string;
@@ -87,6 +87,7 @@ export default function ModerationPage() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [violations, setViolations] = useState<Violation[]>([]);
   const [violationsLoading, setViolationsLoading] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   useEffect(() => {
     loadModerationData();
@@ -440,11 +441,15 @@ export default function ModerationPage() {
                                         <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
                                           {submission.language}
                                         </span>
-                                        {submission.executionTime && (
-                                          <span className="text-xs text-muted-foreground">
+                                        {submission.executionTime !== undefined && (
+                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <Timer className="w-3 h-3" />
                                             {submission.executionTime}ms
                                           </span>
                                         )}
+                                        <span className="text-xs font-semibold text-primary">
+                                          {submission.points} pts
+                                        </span>
                                       </div>
                                       <div className="text-xs text-muted-foreground/70 mt-1">
                                         {new Date(submission.submittedAt).toLocaleString()}
@@ -524,6 +529,15 @@ export default function ModerationPage() {
                                   </span>
                                   <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
                                     {submission.language}
+                                  </span>
+                                  {submission.executionTime !== undefined && (
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                      <Timer className="w-3 h-3" />
+                                      {submission.executionTime}ms
+                                    </span>
+                                  )}
+                                  <span className="text-xs font-semibold text-primary">
+                                    {submission.points} pts
                                   </span>
                                 </div>
                                 <div className="text-xs text-muted-foreground/70 mt-1">
@@ -646,36 +660,59 @@ export default function ModerationPage() {
       {selectedSubmission && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-card rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-border">
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <div>
+            <div className="p-4 border-b border-border">
+              <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-foreground">
                   {selectedSubmission.username}&apos;s Submission
                 </h3>
-                <div className="flex items-center space-x-3 mt-1">
-                  <span className={`flex items-center space-x-1 text-sm font-medium ${getStatusColor(selectedSubmission.status)}`}>
-                    {getStatusIcon(selectedSubmission.status)}
-                    <span>{selectedSubmission.status}</span>
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {selectedSubmission.testsPassed}/{selectedSubmission.totalTests} tests passed
-                  </span>
-                  <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
-                    {selectedSubmission.language}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(selectedSubmission.submittedAt).toLocaleString()}
-                  </span>
-                </div>
+                <button
+                  onClick={closeSubmissionViewer}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
               </div>
-              <button
-                onClick={closeSubmissionViewer}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <XCircle className="w-6 h-6" />
-              </button>
+              <div className="flex items-center flex-wrap gap-3 mt-2">
+                <span className={`flex items-center space-x-1 text-sm font-medium ${getStatusColor(selectedSubmission.status)}`}>
+                  {getStatusIcon(selectedSubmission.status)}
+                  <span>{selectedSubmission.status}</span>
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {selectedSubmission.testsPassed}/{selectedSubmission.totalTests} tests passed
+                </span>
+                <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
+                  {selectedSubmission.language}
+                </span>
+                {selectedSubmission.executionTime !== undefined && (
+                  <span className="text-xs bg-blue-500/10 text-blue-400 px-2 py-1 rounded flex items-center gap-1 font-medium">
+                    <Timer className="w-3 h-3" />
+                    {selectedSubmission.executionTime}ms
+                  </span>
+                )}
+                <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded font-semibold">
+                  {selectedSubmission.points} pts
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(selectedSubmission.submittedAt).toLocaleString()}
+                </span>
+              </div>
             </div>
-            <div className="flex-1 overflow-auto p-4 bg-background">
-              <pre className="text-sm text-foreground font-mono">
+            <div className="flex-1 overflow-auto bg-background">
+              <div className="flex items-center justify-between px-4 py-2 bg-secondary/50 border-b border-border">
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Submitted Code</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(selectedSubmission.code || '');
+                    setCodeCopied(true);
+                    setTimeout(() => setCodeCopied(false), 2000);
+                  }}
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                >
+                  {codeCopied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+                  {codeCopied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+              <pre className="text-sm text-foreground font-mono p-4 overflow-x-auto">
                 <code>{selectedSubmission.code}</code>
               </pre>
             </div>
