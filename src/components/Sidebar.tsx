@@ -1,6 +1,6 @@
 'use client';
 
-import { User, Code2, Trophy, ChevronDown } from 'lucide-react';
+import { User, Code2, Trophy, ChevronDown, Swords, Shield } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -66,6 +66,8 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
     return false;
   };
 
+  const isBattleActive = pathname.startsWith('/dashboard/battle');
+
   const navItems = [
     {
       id: 'profile' as View,
@@ -121,6 +123,49 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
               </li>
             );
           })}
+
+          {/* Battle Section */}
+          <li className="pt-2">
+            <button
+              onClick={() => router.push('/dashboard/battle')}
+              className={`
+                w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all
+                ${
+                  isBattleActive
+                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                }
+              `}
+            >
+              <Swords className="h-5 w-5" />
+              <span>Battle Mode</span>
+              {isBattleActive && (
+                <span className="ml-auto text-xs bg-primary-foreground/20 rounded-full px-2 py-0.5 font-mono">
+                  LIVE
+                </span>
+              )}
+            </button>
+          </li>
+
+          {/* Admin Matchmaker — shown only on admin paths */}
+          {pathname.startsWith('/dashboard/admin') && (
+            <li className="pt-1">
+              <button
+                onClick={() => router.push('/dashboard/admin/matchmaker')}
+                className={`
+                  w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all text-sm
+                  ${
+                    pathname.startsWith('/dashboard/admin')
+                      ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30'
+                      : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                  }
+                `}
+              >
+                <Shield className="h-4 w-4" />
+                <span>Admin Matchmaker</span>
+              </button>
+            </li>
+          )}
 
           {/* Contests Section */}
           <li className="pt-4">
